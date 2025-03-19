@@ -2,7 +2,9 @@
 Pratical Project for the Language Processing class
 
 ## Autores
-- Nome : Tiago André Leça Carneiro
+
+<div>
+- Nome : Tiago Carneiro
 - Número : A93207
 
 <img src = "media/a93207.jpg" alt = "eu" style="text-align = center;" width = "200">
@@ -16,7 +18,7 @@ Pratical Project for the Language Processing class
 - Número : A101919
 
 <img src = "media/a93207.jpg" alt = "eu" style="text-align = center;" width = "200">
-
+</div>
 ## Resumo
 
 Construir um analizador léxico para a linguagem Pascal

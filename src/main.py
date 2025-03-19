@@ -53,7 +53,10 @@ tokens = [
     'COMMA',
     'SEMICOLON',
     'COLON',
-    'DOT'
+    'DOT',
+    'APOSTROPHE',
+    'EQUALS',
+    'EXCLAMATION'
     ] + list(reserved.values())
 
 t_PLUS = r'\+'
@@ -68,6 +71,9 @@ t_COMMA = r','
 t_SEMICOLON = r';'
 t_COLON = r':'
 t_DOT = r'\.'
+t_APOSTROPHE = r'\''
+t_EQUALS = r'='
+t_EXCLAMATION = r'!'
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
@@ -89,6 +95,8 @@ def t_WHITESPACE(t):
     r'\s+'
     pass
 
+t_ignore = ' \t'
+
 def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
@@ -103,7 +111,6 @@ def main():
         code = "input/mock_pascal.pas"
 
     file = open(code).read()
-
     lexer.input(file)
     while True:
         tok = lexer.token()
