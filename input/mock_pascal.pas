@@ -13,5 +13,4 @@ begin
     upper := UpperCase('hello');
     lower := LowerCase('WORLD');
 
-    // ...existing code...
 end.

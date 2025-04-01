@@ -1,114 +1,16 @@
-import re
-import ply.lex as lex
-
-reserved = {
-    'and': 'AND',
-    'array': 'ARRAY',
-    'begin': 'BEGIN',
-    'case': 'CASE',
-    'const': 'CONST',
-    'div': 'DIV',
-    'do': 'DO',
-    'downto': 'DOWNTO',
-    'else': 'ELSE',
-    'end': 'END',
-    'file': 'FILE',
-    'for': 'FOR',
-    'function': 'FUNCTION',
-    'goto': 'GOTO',
-    'if': 'IF',
-    'in': 'IN',
-    'label': 'LABEL',
-    'mod': 'MOD',
-    'nil': 'NIL',
-    'not': 'NOT',
-    'of': 'OF',
-    'or': 'OR',
-    'packed': 'PACKED',
-    'procedure': 'PROCEDURE',
-    'program': 'PROGRAM',
-    'record': 'RECORD',
-    'repeat': 'REPEAT',
-    'set': 'SET',
-    'then': 'THEN',
-    'to': 'TO',
-    'type': 'TYPE',
-    'until': 'UNTIL',
-    'var': 'VAR',
-    'while': 'WHILE',
-    'with': 'WITH'
-}
-
-tokens = [
-    'ID',
-    'NUMBER',
-    'PLUS',
-    'MINUS',
-    'TIMES',
-    'DIVIDE',
-    'LPAREN',
-    'RPAREN',
-    'LBRACKET',
-    'RBRACKET',
-    'COMMA',
-    'SEMICOLON',
-    'COLON',
-    'DOT',
-    'APOSTROPHE',
-    'EQUALS',
-    'EXCLAMATION'
-    ] + list(reserved.values())
-
-t_PLUS = r'\+'
-t_MINUS = r'-'
-t_TIMES = r'\*'
-t_DIVIDE = r'/'
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_LBRACKET = r'\['
-t_RBRACKET = r'\]'
-t_COMMA = r','
-t_SEMICOLON = r';'
-t_COLON = r':'
-t_DOT = r'\.'
-t_APOSTROPHE = r'\''
-t_EQUALS = r'='
-t_EXCLAMATION = r'!'
-
-def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-
-def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)
-    return t
-
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += len(t.value)
-
-def t_COMMENT(t):
-    r'\{.*\}'
-    pass
-
-def t_WHITESPACE(t):
-    r'\s+'
-    pass
-
-t_ignore = ' \t'
-
-def t_error(t):
-    print("Illegal character '%s'" % t.value[0])
-    t.lexer.skip(1)
+from analex import build_lexer
 
 def main():
-    print("Welcome to the Pascal Lexical Analyzer")
-    print("Enter the Pascal code you want to analyze")
+    print("Welcome to the Standard Pascal Compiler")
+    print("Enter the Pascal code you want to compile.")
+    print("You can also enter a file path to a .pas file.")
+    print("Press Enter to use the default file: input/mock_pascal.pas")
+    print("Press Ctrl+C to exit.")
     code = input(">> ")
-    lexer = lex.lex()
+    lexer = build_lexer()
 
     if code == "":
-        code = "input/mock_pascal.pas"
+        code = "../input/mock_pascal.pas"
 
     file = open(code).read()
     lexer.input(file)
