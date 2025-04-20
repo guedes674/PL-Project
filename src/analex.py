@@ -36,7 +36,7 @@ reserved = {
     'var': 'VAR',
     'while': 'WHILE',
     'with': 'WITH',
-        'integer': 'INTEGER',
+    'integer': 'INTEGER',
     'real': 'REAL',
     'boolean': 'BOOLEAN',
     'char': 'CHAR',
@@ -55,6 +55,7 @@ reserved = {
 tokens = [
     'ID',
     'NUMBER',
+    'STRING',
     'PLUS',
     'MINUS',
     'TIMES',
@@ -67,7 +68,6 @@ tokens = [
     'SEMICOLON',
     'COLON',
     'DOT',
-    'APOSTROPHE',
     'EQUALS',
     'EXCLAMATION'
 ] + list(reserved.values())
@@ -84,7 +84,6 @@ t_COMMA = r','
 t_SEMICOLON = r';'
 t_COLON = r':'
 t_DOT = r'\.'
-t_APOSTROPHE = r'\''
 t_EQUALS = r'='
 t_EXCLAMATION = r'!'
 
@@ -94,28 +93,41 @@ def t_ID(t):
     return t
 
 def t_NUMBER(t):
-    r'\d+'
-    t.value = int(t.value)
+    r'\d+(\.\d+)?'
+    if '.' in t.value:
+        t.value = float(t.value)
+    else:
+        t.value = int(t.value)
     return t
+
+def t_STRING(t):
+    r'\'([^\\\n]|(\\.))*?\''
+    # we do like this on value because we ignore the quotes
+    t.value = t.value[1:-1]
+    return t
+
+# for comments like this "{ ... }"
+def t_COMMENT_BRACE(t):
+    r'\{[^}]*\}'
+    t.lexer.lineno += t.value.count('\n')
+    pass
+
+# for comments like this "(* ... *)"
+def t_COMMENT_PAREN(t):
+    r'\(\*([^*]|\*+[^)])*\*+\)'
+    t.lexer.lineno += t.value.count('\n')
+    pass
 
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
-
-def t_COMMENT(t):
-    r'\{.*?\}'
-    pass
-
-def t_WHITESPACE(t):
-    r'\s+'
-    pass
 
 t_ignore = ' \t'
 
 def t_error(t):
     print("Illegal character '%s'" % t.value[0])
     t.lexer.skip(1)
-    
+
 def build_lexer():
     lexer = lex.lex()
     return lexer
