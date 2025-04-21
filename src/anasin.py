@@ -116,10 +116,10 @@ def p_parameter_section(p):
 def p_constant_list(p):
     # constant_list : constant_list constant
     if len(p) == 2:
-        p[0] = p[1] + [p[2]]
+        p[0] = p[1] + [p[2]] # more than one constant
     # | constant
     else:
-        p[0] = [p[1]]
+        p[0] = [p[1]] # only one constant
 
 # rule for each constant
 def p_constant(p):
@@ -137,10 +137,10 @@ def p_constant_value(p):
 def p_type_list(p):
     # type_list : type_list type_definition
     if len(p) == 2:
-        p[0] = p[1] + [p[2]]
+        p[0] = p[1] + [p[2]] # more than one type definition
     # | type_definition
     else:
-        p[0] = [p[1]]
+        p[0] = [p[1]] # only one type definition
 
 # rule for a type definition
 def p_type_definition(p):
