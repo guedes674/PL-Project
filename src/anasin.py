@@ -197,24 +197,24 @@ def p_expression_list(p):
 
 # rule for each expression
 def p_expression(p):
-    # expression : ID
-    #            | NUMBER
-    #            | STRING
+    # expression : ID                             # variable
+    #            | NUMBER                         # number
+    #            | STRING                         # string
     if len(p) == 2:
         p[0] = p[1]
-    #            | LPAREN expression RPAREN
+    #            | LPAREN expression RPAREN       # expression between parentheses
     elif len(p) == 4:
         p[0] = p[2]
-    #            | expression PLUS expression
-    #            | expression MINUS expression
-    #            | expression TIMES expression
-    #            | expression DIVIDE expression
-    #            | expression GT expression
-    #            | expression LT expression
-    #            | expression GE expression
-    #            | expression LE expression
-    #            | expression EQ expression
-    #            | expression NE expression
-    #            | function_procedure_call
+    #            | expression PLUS expression     # addition
+    #            | expression MINUS expression    # subtraction
+    #            | expression TIMES expression    # multiplication
+    #            | expression DIVIDE expression   # division
+    #            | expression GT expression       # greater than (>)
+    #            | expression LT expression       # less than (<)
+    #            | expression GE expression       # greater or equals (>=)
+    #            | expression LE expression       # less or equals (<=)
+    #            | expression EQ expression       # equivalent (=)
+    #            | expression NE expression       # not equals (<>)
+    #            | function_procedure_call        # function call
     else:
         p[0] = (p[2], p[1], p[3])
