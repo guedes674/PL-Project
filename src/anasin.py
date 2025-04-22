@@ -26,7 +26,7 @@ def p_id_list(p):
 
 # rule for a block (can be the program block, the function block, the procedure block, etc...)
 def p_block(p):
-    # block : declarations statement
+    # block : declarations compound_statement
     p[0] = ('block', p[1], p[2])
 
 # rule for declarations
@@ -146,3 +146,75 @@ def p_type_list(p):
 def p_type_definition(p):
     ''' type_definition : ID EQUALS type SEMICOLON'''
     p[0] = ('type_definition', p[1], p[3])
+
+# compound statements
+# derived on block
+# rule for a compound_statement (main program)
+def p_compound_statement(p):
+    ''' compound_statement : BEGIN statement_list END '''
+    p[0] = ('compound_statement', p[2])
+
+# rule for statement list
+def p_statement_list(p):
+    # statement_list : statement_list SEMICOLON statement
+    if len(p) == 4:
+        p[0] = p[1] + [p[3]] # more than one statement
+    # | statement
+    else:
+        p[0] = [p[1]] # only one statement
+
+# rule for each statement
+def p_statement(p):
+    ''' statement : assignment_statement
+                  | function_procedure_call
+                  | if_statement
+                  | while_statement
+                  | repeat_statement
+                  | for_statement
+                  | case_statement
+                  | compound_statement
+                  | EPSYLON '''
+    p[0] = p[1]
+
+# rule for assignment statement
+def p_assignment_statement(p):
+    ''' assignment_statement : ID ASSIGN expression '''
+    p[0] = ('assignment_statement', p[1], p[3])
+
+# rule for a function/procedure call
+def p_function_procedure_call(p):
+    ''' function_procedure_call : ID LPAREN expression_list RPAREN '''
+    p[0] = ('function_procedure_call', p[1], p[3])
+
+# rule for expression list
+def p_expression_list(p):
+    # expression_list : expression_list COMMA expression
+    if len(p) == 4:
+        p[0] = p[1] + [p[3]] # more than one expression
+    # | expression
+    else:
+        p[0] = [p[1]] # only one expression
+
+# rule for each expression
+def p_expression(p):
+    # expression : ID
+    #            | NUMBER
+    #            | STRING
+    if len(p) == 2:
+        p[0] = p[1]
+    #            | LPAREN expression RPAREN
+    elif len(p) == 4:
+        p[0] = p[2]
+    #            | expression PLUS expression
+    #            | expression MINUS expression
+    #            | expression TIMES expression
+    #            | expression DIVIDE expression
+    #            | expression GT expression
+    #            | expression LT expression
+    #            | expression GE expression
+    #            | expression LE expression
+    #            | expression EQ expression
+    #            | expression NE expression
+    #            | function_procedure_call
+    else:
+        p[0] = (p[2], p[1], p[3])

@@ -62,6 +62,13 @@ tokens = [
     'DIVIDE',
     'LPAREN',
     'RPAREN',
+    'ASSIGN',
+    'NE',
+    'GE',
+    'GT',
+    'LE',
+    'LT',
+    'EQ',
     'LBRACKET',
     'RBRACKET',
     'COMMA',
@@ -78,6 +85,12 @@ t_TIMES = r'\*'
 t_DIVIDE = r'/'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
+t_ASSIGN = r':='
+t_NE = r'<>'
+t_GE = r'>='
+t_GT = r'>'
+t_LE = r'<='
+t_LT = r'<'
 t_LBRACKET = r'\['
 t_RBRACKET = r'\]'
 t_COMMA = r','
