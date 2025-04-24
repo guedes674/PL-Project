@@ -1,5 +1,6 @@
 import ply.yacc as yacc
 from analex import tokens
+from aux_classes import FunctionDeclaration, ProcedureDeclaration
 
 # rule for the entire program structure
 def p_program(p):
@@ -61,13 +62,14 @@ def p_constant_type_declaration(p):
     else:
         p[0] = ('type_declaration', p[2]) # for a type declaration
 
-# rule for function/procedure declaration
+# rule for function/procedure declaration (create a class for function declaration and procedure declaration to be easier to know who parameter is who)
 def p_function_procedure_declaration(p):
     # function_declaration : FUNCTION ID parameter_list COLON type SEMICOLON block
     if len(p) == 8:
-        p[0] = ('function_declaration', p[2], p[3], p[5], p[7]) # for function declaration because have return
+        p[0] = ('function_declaration', FunctionDeclaration(name=p[2], parameter_list=p[3], return_type=p[5], block=p[7])) # for function declaration because have return
+    # procedure_declaration : PROCEDURE ID parameter_list SEMICOLON block
     else:
-        p[0] = ('procedure_declaration', p[2], p[3], p[5]) # for procedure declaration because doesn't have return
+        p[0] = ('procedure_declaration', ProcedureDeclaration(name=p[2], parameter_list=p[3], block=p[5])) # for procedure declaration because doesn't have return
 
 # rule for a list of variables
 def p_variable_list(p):
@@ -196,25 +198,54 @@ def p_expression_list(p):
         p[0] = [p[1]] # only one expression
 
 # rule for each expression
-def p_expression(p):
-    # expression : ID                             # variable
-    #            | NUMBER                         # number
-    #            | STRING                         # string
-    if len(p) == 2:
-        p[0] = p[1]
-    #            | LPAREN expression RPAREN       # expression between parentheses
-    elif len(p) == 4:
-        p[0] = p[2]
-    #            | expression PLUS expression     # addition
-    #            | expression MINUS expression    # subtraction
-    #            | expression TIMES expression    # multiplication
-    #            | expression DIVIDE expression   # division
-    #            | expression GT expression       # greater than (>)
-    #            | expression LT expression       # less than (<)
-    #            | expression GE expression       # greater or equals (>=)
-    #            | expression LE expression       # less or equals (<=)
-    #            | expression EQ expression       # equivalent (=)
-    #            | expression NE expression       # not equals (<>)
-    #            | function_procedure_call        # function call
-    else:
-        p[0] = (p[2], p[1], p[3])
+# rule for a literal (number, string, etc..)
+def p_expression_literal(p):
+    ''' expression : NUMBER
+                   | STRING '''
+    # needs to be updated for more types
+    p[0] = ('literal', p[1])
+
+# rule for a variable
+def p_expression_variable(p):
+    ''' expression : ID '''
+    p[0] = ('variable', p[1])
+
+# rule for grouped expressions
+def p_expression_group(p):
+    ''' expression : LPAREN expression RPAREN '''
+    p[0] = p[2]
+
+# rule for unary operations
+def p_expression_unop(p):
+    ''' expression : NOT expression 
+                   | TILDE expression '''
+    p[0] = ('unop', p[1], p[2])
+
+# rule for binary operations
+def p_expression_binop(p):
+    ''' expression : expression PLUS expression              # addition
+                   | expression MINUS expression             # subtraction
+                   | expression TIMES expression             # multiplication
+                   | expression DIVIDE expression            # division (real)
+                   | expression DIV expression               # integer division
+                   | expression MOD expression               # modulo
+                   | expression AND expression               # logical and
+                   | expression AMPERSAND expression         # bitwise and
+                   | expression OR expression                # logical or
+                   | expression PIPE expression              # bitwise or
+                   | expression EXCLAMATION expression       # bitwise not or logical negation (depending on context)
+                   | expression EQUALS expression            # equals (=)
+                   | expression NOTEQUAL expression          # not equals (<>)
+                   | expression LT expression                # less than (<)
+                   | expression LE expression                # less than or equal (<=)
+                   | expression GT expression                # greater than (>)
+                   | expression GE expression                # greater than or equal (>=)
+                   | expression IN expression                # membership (in)
+                   | expression ORELSE expression            # short-circuit logical or
+                   | expression ANDTHEN expression           # short-circuit logical and '''
+    p[0] = ('binop', p[2], p[1], p[3])
+
+# rule for a function/procedure call inside a expression (essentially for the case of having system calls inside expressions)
+def p_expression_function_procedure_call(p):
+    '''expression : ID LPAREN expression_list RPAREN'''
+    p[0] = ('function_procedure_call', p[1], p[3])

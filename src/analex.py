@@ -2,6 +2,7 @@ import ply.lex as lex
 
 reserved = {
     'and': 'AND',
+    'and then': 'ANDTHEN',
     'array': 'ARRAY',
     'begin': 'BEGIN',
     'case': 'CASE',
@@ -23,6 +24,7 @@ reserved = {
     'not': 'NOT',
     'of': 'OF',
     'or': 'OR',
+    'or else': 'ORELSE',
     'packed': 'PACKED',
     'procedure': 'PROCEDURE',
     'program': 'PROGRAM',
@@ -63,6 +65,10 @@ tokens = [
     'LPAREN',
     'RPAREN',
     'ASSIGN',
+    'PIPE',
+    'AMPERSAND',
+    'TILDE',
+    'NOT',
     'NE',
     'GE',
     'GT',
@@ -79,6 +85,14 @@ tokens = [
     'EXCLAMATION'
 ] + list(reserved.values())
 
+precedence = (
+    ('right', 'TILDE', 'NOT'),
+    ('left', 'TIMES', 'DIVIDE', 'DIV', 'MOD', 'AND', 'AMPERSAND'),
+    ('left', 'PLUS', 'MINUS', 'OR', 'PIPE', 'EXCLAMATION'),
+    ('left', 'EQUALS', 'NOTEQUAL', 'LT', 'LE', 'GT', 'GE', 'IN'),
+    ('left', 'ORELSE', 'ANDTHEN'),
+)
+
 t_PLUS = r'\+'
 t_MINUS = r'-'
 t_TIMES = r'\*'
@@ -86,6 +100,9 @@ t_DIVIDE = r'/'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_ASSIGN = r':='
+t_PIPE = r'\|'
+t_AMPERSAND = r'&'
+t_TILDE = r'~'
 t_NE = r'<>'
 t_GE = r'>='
 t_GT = r'>'
