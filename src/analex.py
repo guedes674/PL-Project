@@ -1,60 +1,55 @@
 import ply.lex as lex
 
-reserved = {
-    'and': 'AND',
-    'and then': 'ANDTHEN',
-    'array': 'ARRAY',
-    'begin': 'BEGIN',
-    'case': 'CASE',
-    'const': 'CONST',
-    'div': 'DIV',
-    'do': 'DO',
-    'downto': 'DOWNTO',
-    'else': 'ELSE',
-    'end': 'END',
-    'file': 'FILE',
-    'for': 'FOR',
-    'function': 'FUNCTION',
-    'goto': 'GOTO',
-    'if': 'IF',
-    'in': 'IN',
-    'label': 'LABEL',
-    'mod': 'MOD',
-    'nil': 'NIL',
-    'not': 'NOT',
-    'of': 'OF',
-    'or': 'OR',
-    'or else': 'ORELSE',
-    'packed': 'PACKED',
-    'procedure': 'PROCEDURE',
-    'program': 'PROGRAM',
-    'record': 'RECORD',
-    'repeat': 'REPEAT',
-    'set': 'SET',
-    'then': 'THEN',
-    'to': 'TO',
-    'type': 'TYPE',
-    'until': 'UNTIL',
-    'var': 'VAR',
-    'while': 'WHILE',
-    'with': 'WITH',
-    'integer': 'INTEGER',
-    'real': 'REAL',
-    'boolean': 'BOOLEAN',
-    'char': 'CHAR',
-    'string': 'STRING',
-    'byte': 'BYTE',
-    'word': 'WORD',
-    'longint': 'LONGINT',
-    'shortint': 'SHORTINT',
-    'single': 'SINGLE',
-    'double': 'DOUBLE',
-    'extended': 'EXTENDED',
-    'comp': 'COMP',
-    'currency': 'CURRENCY'
-}
-
 tokens = [
+    'AND',
+    'ANDTHEN',
+    'ARRAY',
+    'BEGIN',
+    'CASE',
+    'CONST',
+    'DIV',
+    'DO',
+    'DOWNTO',
+    'ELSE',
+    'END',
+    'FILE',
+    'FOR',
+    'FUNCTION',
+    'GOTO',
+    'IF',
+    'IN',
+    'LABEL',
+    'MOD',
+    'NIL',
+    'OF',
+    'OR',
+    'ORELSE',
+    'PACKED',
+    'PROCEDURE',
+    'PROGRAM',
+    'RECORD',
+    'REPEAT',
+    'SET',
+    'THEN',
+    'TO',
+    'TYPE',
+    'UNTIL',
+    'VAR',
+    'WHILE',
+    'WITH',
+    'INTEGER',
+    'REAL',
+    'BOOLEAN',
+    'CHAR',
+    'BYTE',
+    'WORD',
+    'LONGINT',
+    'SHORTINT',
+    'SINGLE',
+    'DOUBLE',
+    'EXTENDED',
+    'COMP',
+    'CURRENCY',
     'ID',
     'NUMBER',
     'STRING',
@@ -83,7 +78,7 @@ tokens = [
     'DOT',
     'EQUALS',
     'EXCLAMATION'
-] + list(reserved.values())
+]
 
 precedence = (
     ('right', 'TILDE', 'NOT'),
@@ -118,8 +113,10 @@ t_EQUALS = r'='
 t_EXCLAMATION = r'!'
 
 def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    t.type = reserved.get(t.value.lower(), 'ID')
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    t.type = t.type.upper()
+    if t.value in tokens:
+        t.type = t.value
     return t
 
 def t_NUMBER(t):
@@ -147,6 +144,208 @@ def t_COMMENT_PAREN(t):
     r'\(\*([^*]|\*+[^)])*\*+\)'
     t.lexer.lineno += t.value.count('\n')
     pass
+
+# list of reserved words defined in the tokens list
+# and the corresponding regex patterns
+def t_AND(t):
+    r'(?i)AND'
+    return t
+
+def t_ANDTHEN(t):
+    r'(?i)ANDTHEN'
+    return t
+
+def t_ARRAY(t):
+    r'(?i)ARRAY'
+    return t
+
+def t_BEGIN(t):
+    r'(?i)BEGIN'
+    return t
+
+def t_CASE(t):
+    r'(?i)CASE'
+    return t
+
+def t_CONST(t):
+    r'(?i)CONST'
+    return t
+
+def t_DIV(t):
+    r'(?i)DIV'
+    return t
+
+def t_DO(t):
+    r'(?i)DO'
+    return t
+
+def t_DOWNTO(t):
+    r'(?i)DOWNTO'
+    return t
+
+def t_ELSE(t):
+    r'(?i)ELSE'
+    return t
+
+def t_END(t):
+    r'(?i)END'
+    return t
+
+def t_FILE(t):
+    r'(?i)FILE'
+    return t
+
+def t_FOR(t):
+    r'(?i)FOR'
+    return t
+
+def t_FUNCTION(t):
+    r'(?i)FUNCTION'
+    return t
+
+def t_GOTO(t):
+    r'(?i)GOTO'
+    return t
+
+def t_IF(t):
+    r'(?i)IF'
+    return t
+
+def t_IN(t):
+    r'(?i)IN'
+    return t
+
+def t_LABEL(t):
+    r'(?i)LABEL'
+    return t
+
+def t_MOD(t):
+    r'(?i)MOD'
+    return t
+
+def t_NIL(t):
+    r'(?i)NIL'
+    return t
+
+def t_NOT(t):
+    r'(?i)NOT'
+    return t
+
+def t_OF(t):
+    r'(?i)OF'
+    return t
+
+def t_OR(t):
+    r'(?i)OR'
+    return t
+
+def t_ORELSE(t):
+    r'(?i)ORELSE'
+    return t
+
+def t_PACKED(t):
+    r'(?i)PACKED'
+    return t
+
+def t_PROCEDURE(t):
+    r'(?i)PROCEDURE'
+    return t
+
+def t_PROGRAM(t):
+    r'(?i)PROGRAM'
+    return t
+
+def t_RECORD(t):
+    r'(?i)RECORD'
+    return t
+
+def t_REPEAT(t):
+    r'(?i)REPEAT'
+    return t
+
+def t_SET(t):
+    r'(?i)SET'
+    return t
+
+def t_THEN(t):
+    r'(?i)THEN'
+    return t
+
+def t_TO(t):
+    r'(?i)TO'
+    return t
+
+def t_TYPE(t):
+    r'(?i)TYPE'
+    return t
+
+def t_UNTIL(t):
+    r'(?i)UNTIL'
+    return t
+
+def t_VAR(t):
+    r'(?i)VAR'
+    return t
+
+def t_WHILE(t):
+    r'(?i)WHILE'
+    return t
+
+def t_WITH(t):
+    r'(?i)WITH'
+    return t
+
+def t_INTEGER(t):
+    r'(?i)INTEGER'
+    return t
+
+def t_REAL(t):
+    r'(?i)REAL'
+    return t
+
+def t_BOOLEAN(t):
+    r'(?i)BOOLEAN'
+    return t
+
+def t_CHAR(t):
+    r'(?i)CHAR'
+    return t
+
+def t_BYTE(t):
+    r'(?i)BYTE'
+    return t
+
+def t_WORD(t):
+    r'(?i)WORD'
+    return t
+
+def t_LONGINT(t):
+    r'(?i)LONGINT'
+    return t
+
+def t_SHORTINT(t):
+    r'(?i)SHORTINT'
+    return t
+
+def t_SINGLE(t):
+    r'(?i)SINGLE'
+    return t
+
+def t_DOUBLE(t):
+    r'(?i)DOUBLE'
+    return t
+
+def t_EXTENDED(t):
+    r'(?i)EXTENDED'
+    return t
+
+def t_COMP(t):
+    r'(?i)COMP'
+    return t
+
+def t_CURRENCY(t):
+    r'(?i)CURRENCY'
+    return t
 
 def t_newline(t):
     r'\n+'
