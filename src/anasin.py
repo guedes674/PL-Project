@@ -91,6 +91,30 @@ def p_type(p):
     ''' type : ID '''
     p[0] = p[1]
 
+# rule for array type
+def p_type_array(p):
+    ''' type : ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type '''
+    p[0] = ('array_type', (p[3], p[5]), p[8])
+
+# rule for record type
+def p_type_record(p):
+    ''' type : RECORD field_list END '''
+    p[0] = ('record_type', p[2])
+
+# rule for a field_list to use on a record
+def p_field_list(p):
+    # field_list : field_list SEMICOLON field
+    if len(p) == 4:
+        p[0] = p[1] + [p[3]]
+    # | field
+    else:
+        p[0] = [p[1]]
+
+# rule for a single field
+def p_field(p):
+    ''' field : id_list COLON type '''
+    p[0] = ('field', p[1], p[3])
+
 # rule for a parameter_list
 def p_parameter_list(p):
     # parameter_list : LPAREN parameter_section_list RPAREN
@@ -111,8 +135,12 @@ def p_parameter_section_list(p):
 
 # rule for each parameter
 def p_parameter_section(p):
-    ''' parameter_section : id_list COLON type '''
-    p[0] = ('parameter_section', p[1], p[3])
+    # parameter_section : id_list COLON type
+    if len(p) == 4:
+        p[0] = ('param', 'value', p[1], p[3])
+    # | VAR id_list COLON type
+    else:
+        p[0] = ('param', 'ref', p[2], p[4])
 
 # rule for a constant list
 def p_constant_list(p):
@@ -178,6 +206,14 @@ def p_statement(p):
                   | EPSYLON '''
     p[0] = p[1]
 
+# rule for a io call (for example WriteLn or Write)
+def p_statement_io_call(p):
+    ''' statement : READ LPAREN id_list RPAREN
+                  | READLN LPAREN id_list RPAREN
+                  | WRITE LPAREN expression_list RPAREN
+                  | WRITELN LPAREN expression_list RPAREN '''
+    p[0] = ('io_call', p[1].lower(), p[3])
+
 # rule for assignment statement
 def p_assignment_statement(p):
     ''' assignment_statement : ID ASSIGN expression '''
@@ -187,6 +223,25 @@ def p_assignment_statement(p):
 def p_function_procedure_call(p):
     ''' function_procedure_call : ID LPAREN expression_list RPAREN '''
     p[0] = ('function_procedure_call', p[1], p[3])
+
+# rule for a case statement
+def p_case_statement(p):
+    ''' case_statement : CASE expression OF case_list END '''
+    p[0] = ('case', p[2], p[4])
+
+# rule for a list of cases inside a case statement
+def p_case_list(p):
+    # case_list : case_list case_element
+    if len(p) == 3:
+        p[0] = p[1] + [p[2]]
+    # | case_element
+    else:
+        p[0] = [p[1]]
+
+# rule for a simple case inside a list of cases
+def p_case_element(p):
+    ''' case_element : constant_list COLON statement SEMICOLON '''
+    p[0] = ('case_element', p[1], p[3])
 
 # rule for expression list
 def p_expression_list(p):
@@ -244,6 +299,16 @@ def p_expression_binop(p):
                    | expression ORELSE expression            # short-circuit logical or
                    | expression ANDTHEN expression           # short-circuit logical and '''
     p[0] = ('binop', p[2], p[1], p[3])
+
+# rule for access a index of array (like a[2] for example)
+def p_expression_indexing(p):
+    ''' expression : expression LBRACKET expression RBRACKET '''
+    p[0] = ('indexing', p[1], p[3])
+
+# rule for access a field (for example a.name)
+def p_expression_field_access(p):
+    ''' expression : expression DOT ID '''
+    p[0] = ('field_access', p[1], p[3])
 
 # rule for a function/procedure call inside a expression (essentially for the case of having system calls inside expressions)
 def p_expression_function_procedure_call(p):
