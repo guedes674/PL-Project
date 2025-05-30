@@ -77,14 +77,18 @@ tokens = [
     'COLON',
     'DOT',
     'EQUALS',
-    'EXCLAMATION'
+    'EXCLAMATION',
+    'READ',
+    'READLN', 
+    'WRITE',
+    'WRITELN'
 ]
 
 precedence = (
     ('right', 'TILDE', 'NOT'),
     ('left', 'TIMES', 'DIVIDE', 'DIV', 'MOD', 'AND', 'AMPERSAND'),
     ('left', 'PLUS', 'MINUS', 'OR', 'PIPE', 'EXCLAMATION'),
-    ('left', 'EQUALS', 'NOTEQUAL', 'LT', 'LE', 'GT', 'GE', 'IN'),
+    ('left', 'EQUALS', 'NE', 'LT', 'LE', 'GT', 'GE', 'IN'),
     ('left', 'ORELSE', 'ANDTHEN'),
 )
 
@@ -115,203 +119,219 @@ t_EXCLAMATION = r'!'
 # list of reserved words defined in the tokens list
 # and the corresponding regex patterns
 def t_AND(t):
-    r'(?i)AND'
+    r'AND'
     return t
 
 def t_ANDTHEN(t):
-    r'(?i)ANDTHEN'
+    r'ANDTHEN'
     return t
 
 def t_ARRAY(t):
-    r'(?i)ARRAY'
+    r'ARRAY'
     return t
 
 def t_BEGIN(t):
-    r'(?i)BEGIN'
+    r'BEGIN'
     return t
 
 def t_CASE(t):
-    r'(?i)CASE'
+    r'CASE'
     return t
 
 def t_CONST(t):
-    r'(?i)CONST'
+    r'CONST'
     return t
 
 def t_DIV(t):
-    r'(?i)DIV'
+    r'DIV'
     return t
 
 def t_DO(t):
-    r'(?i)DO'
+    r'DO'
     return t
 
 def t_DOWNTO(t):
-    r'(?i)DOWNTO'
+    r'DOWNTO'
     return t
 
 def t_ELSE(t):
-    r'(?i)ELSE'
+    r'ELSE'
     return t
 
 def t_END(t):
-    r'(?i)END'
+    r'END'
     return t
 
 def t_FILE(t):
-    r'(?i)FILE'
+    r'FILE'
     return t
 
 def t_FOR(t):
-    r'(?i)FOR'
+    r'FOR'
     return t
 
 def t_FUNCTION(t):
-    r'(?i)FUNCTION'
+    r'FUNCTION'
     return t
 
 def t_GOTO(t):
-    r'(?i)GOTO'
+    r'GOTO'
     return t
 
 def t_IF(t):
-    r'(?i)IF'
+    r'IF'
     return t
 
 def t_IN(t):
-    r'(?i)IN'
+    r'IN'
     return t
 
 def t_LABEL(t):
-    r'(?i)LABEL'
+    r'LABEL'
     return t
 
 def t_MOD(t):
-    r'(?i)MOD'
+    r'MOD'
     return t
 
 def t_NIL(t):
-    r'(?i)NIL'
+    r'NIL'
     return t
 
 def t_NOT(t):
-    r'(?i)NOT'
+    r'NOT'
     return t
 
 def t_OF(t):
-    r'(?i)OF'
+    r'OF'
     return t
 
 def t_OR(t):
-    r'(?i)OR'
+    r'OR'
     return t
 
 def t_ORELSE(t):
-    r'(?i)ORELSE'
+    r'ORELSE'
     return t
 
 def t_PACKED(t):
-    r'(?i)PACKED'
+    r'PACKED'
     return t
 
 def t_PROCEDURE(t):
-    r'(?i)PROCEDURE'
+    r'PROCEDURE'
     return t
 
 def t_PROGRAM(t):
-    r'(?i)PROGRAM'
+    r'PROGRAM'
     return t
 
 def t_RECORD(t):
-    r'(?i)RECORD'
+    r'RECORD'
     return t
 
 def t_REPEAT(t):
-    r'(?i)REPEAT'
+    r'REPEAT'
     return t
 
 def t_SET(t):
-    r'(?i)SET'
+    r'SET'
     return t
 
 def t_THEN(t):
-    r'(?i)THEN'
+    r'THEN'
     return t
 
 def t_TO(t):
-    r'(?i)TO'
+    r'TO'
     return t
 
 def t_TYPE(t):
-    r'(?i)TYPE'
+    r'TYPE'
     return t
 
 def t_UNTIL(t):
-    r'(?i)UNTIL'
+    r'UNTIL'
     return t
 
 def t_VAR(t):
-    r'(?i)VAR'
+    r'VAR'
     return t
 
 def t_WHILE(t):
-    r'(?i)WHILE'
+    r'WHILE'
     return t
 
 def t_WITH(t):
-    r'(?i)WITH'
+    r'WITH'
     return t
 
 def t_INTEGER(t):
-    r'(?i)INTEGER'
+    r'INTEGER'
     return t
 
 def t_REAL(t):
-    r'(?i)REAL'
+    r'REAL'
     return t
 
 def t_BOOLEAN(t):
-    r'(?i)BOOLEAN'
+    r'BOOLEAN'
     return t
 
 def t_CHAR(t):
-    r'(?i)CHAR'
+    r'CHAR'
     return t
 
 def t_BYTE(t):
-    r'(?i)BYTE'
+    r'BYTE'
     return t
 
 def t_WORD(t):
-    r'(?i)WORD'
+    r'WORD'
     return t
 
 def t_LONGINT(t):
-    r'(?i)LONGINT'
+    r'LONGINT'
     return t
 
 def t_SHORTINT(t):
-    r'(?i)SHORTINT'
+    r'SHORTINT'
     return t
 
 def t_SINGLE(t):
-    r'(?i)SINGLE'
+    r'SINGLE'
     return t
 
 def t_DOUBLE(t):
-    r'(?i)DOUBLE'
+    r'DOUBLE'
     return t
 
 def t_EXTENDED(t):
-    r'(?i)EXTENDED'
+    r'EXTENDED'
     return t
 
 def t_COMP(t):
-    r'(?i)COMP'
+    r'COMP'
     return t
 
 def t_CURRENCY(t):
-    r'(?i)CURRENCY'
+    r'CURRENCY'
+    return t
+
+def t_READ(t):
+    r'READ'
+    return t
+
+def t_READLN(t):
+    r'READLN'
+    return t
+
+def t_WRITE(t):
+    r'WRITE'
+    return t
+
+def t_WRITELN(t):
+    r'WRITELN'
     return t
 
 def t_NUMBER(t):
