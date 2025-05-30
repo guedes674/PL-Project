@@ -112,39 +112,6 @@ t_DOT = r'\.'
 t_EQUALS = r'='
 t_EXCLAMATION = r'!'
 
-def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z0-9_]*'
-    t.type = t.type.upper()
-    if t.value in tokens:
-        t.type = t.value
-    return t
-
-def t_NUMBER(t):
-    r'\d+(\.\d+)?'
-    if '.' in t.value:
-        t.value = float(t.value)
-    else:
-        t.value = int(t.value)
-    return t
-
-def t_STRING(t):
-    r'\'([^\\\n]|(\\.))*?\''
-    # we do like this on value because we ignore the quotes
-    t.value = t.value[1:-1]
-    return t
-
-# for comments like this "{ ... }"
-def t_COMMENT_BRACE(t):
-    r'\{[^}]*\}'
-    t.lexer.lineno += t.value.count('\n')
-    pass
-
-# for comments like this "(* ... *)"
-def t_COMMENT_PAREN(t):
-    r'\(\*([^*]|\*+[^)])*\*+\)'
-    t.lexer.lineno += t.value.count('\n')
-    pass
-
 # list of reserved words defined in the tokens list
 # and the corresponding regex patterns
 def t_AND(t):
@@ -345,6 +312,39 @@ def t_COMP(t):
 
 def t_CURRENCY(t):
     r'(?i)CURRENCY'
+    return t
+
+def t_NUMBER(t):
+    r'\d+(\.\d+)?'
+    if '.' in t.value:
+        t.value = float(t.value)
+    else:
+        t.value = int(t.value)
+    return t
+
+def t_STRING(t):
+    r'\'([^\\\n]|(\\.))*?\''
+    # we do like this on value because we ignore the quotes
+    t.value = t.value[1:-1]
+    return t
+
+# for comments like this "{ ... }"
+def t_COMMENT_BRACE(t):
+    r'\{[^}]*\}'
+    t.lexer.lineno += t.value.count('\n')
+    pass
+
+# for comments like this "(* ... *)"
+def t_COMMENT_PAREN(t):
+    r'\(\*([^*]|\*+[^)])*\*+\)'
+    t.lexer.lineno += t.value.count('\n')
+    pass
+
+def t_ID(t):
+    r'[a-zA-Z_][a-zA-Z0-9_]*'
+    val = t.value.upper()
+    if val in tokens:
+        t.type = val
     return t
 
 def t_newline(t):
