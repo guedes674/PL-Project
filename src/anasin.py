@@ -1,75 +1,45 @@
 import ply.yacc as yacc
 from analex import tokens
-from aux_classes import FunctionDeclaration, ProcedureDeclaration
+from ast_nodes import *
 
 # rule for the entire program structure
 def p_program(p):
-    # program : header block DOT
-    p[0] = ('program', p[1], p[2])
+    '''program : header block DOT'''
+    p[0] = Program(header=p[1], block=p[2])
 
 # rule for the program header
 def p_header(p):
-    # header : PROGRAM ID LPAREN id_list RPAREN SEMICOLON
+    '''header : PROGRAM ID LPAREN id_list RPAREN SEMICOLON
+              | PROGRAM ID SEMICOLON'''
     if len(p) == 7:
-        p[0] = ('header', p[2], p[4]) # the program has a list of identifiers
-    # | PROGRAM ID SEMICOLON
+        p[0] = ProgramHeader(name=p[2], id_list=p[4])
     else:
-        p[0] = ('header', p[2], []) # list of identifiers is empty
+        p[0] = ProgramHeader(name=p[2], id_list=[])
 
-# rule for a list of identifiers
-def p_id_list(p):
-    # id_list : ID
-    if len(p) == 2:
-        p[0] = [p[1]] # single identifier
-    # | id_list COMMA ID
-    else:
-        p[0] = p[1] + [p[3]] # multiple identifiers
-
-# rule for a block (can be the program block, the function block, the procedure block, etc...)
+# rule for a block
 def p_block(p):
-    # block : declarations compound_statement
-    p[0] = ('block', p[1], p[2])
+    '''block : declarations compound_statement'''
+    p[0] = Block(declarations=p[1], compound_statement=p[2])
 
-# rule for declarations
-def p_declarations(p):
-    # declarations : declarations declaration
-    if len(p) == 3:
-        p[0] = p[1] + [p[2]] # multiple declarations
-    # | declaration
-    else:
-        p[0] = [p[1]] # single declaration
-
-# rule for each declaration
-def p_declaration(p):
-    ''' declaration : variable_declaration
-                    | function_declaration
-                    | procedure_declaration
-                    | constant_type_declaration '''
-    # to be updated because maybe there are more than this
-    p[0] = p[1]
-
-# types of declarations
 # rule for variable declaration
 def p_variable_declaration(p):
-    ''' variable_declaration : VAR variable_list SEMICOLON '''
-    p[0] = ('variable_declaration', p[2])
+    '''variable_declaration : VAR variable_list'''
+    variables = [Variable(id_list=var[1], var_type=var[2]) for var in p[2]]
+    p[0] = VariableDeclaration(variable_list=variables)
 
-# rule for a constant/type declaration
-def p_constant_type_declaration(p):
-    # constant_type_declaration : CONST constant_list
-    if p[1] == 'CONST':
-        p[0] = ('constant_declaration', p[2]) # for a constant declaration
-    else:
-        p[0] = ('type_declaration', p[2]) # for a type declaration
-
-# rule for function/procedure declaration (create a class for function declaration and procedure declaration to be easier to know who parameter is who)
+# rule for function/procedure declaration
 def p_function_procedure_declaration(p):
-    # function_declaration : FUNCTION ID parameter_list COLON type SEMICOLON block
-    if len(p) == 8:
-        p[0] = ('function_declaration', FunctionDeclaration(name=p[2], parameter_list=p[3], return_type=p[5], block=p[7])) # for function declaration because have return
-    # procedure_declaration : PROCEDURE ID parameter_list SEMICOLON block
-    else:
-        p[0] = ('procedure_declaration', ProcedureDeclaration(name=p[2], parameter_list=p[3], block=p[5])) # for procedure declaration because doesn't have return
+    '''function_declaration : FUNCTION ID parameter_list COLON type SEMICOLON block
+       procedure_declaration : PROCEDURE ID parameter_list SEMICOLON block'''
+    if len(p) == 8:  # Function
+        params = [Parameter(id_list=param[2], param_type=param[3], is_var=(param[1] == 'ref')) 
+                 for param in p[3]]
+        p[0] = FunctionDeclaration(name=p[2], parameter_list=params, 
+                                 return_type=p[5], block=p[7])
+    else:  # Procedure
+        params = [Parameter(id_list=param[2], param_type=param[3], is_var=(param[1] == 'ref')) 
+                 for param in p[3]]
+        p[0] = ProcedureDeclaration(name=p[2], parameter_list=params, block=p[5])
 
 # rule for a list of variables
 def p_variable_list(p):
@@ -314,3 +284,27 @@ def p_expression_field_access(p):
 def p_expression_function_procedure_call(p):
     '''expression : ID LPAREN expression_list RPAREN'''
     p[0] = ('function_procedure_call', p[1], p[3])
+
+def p_error(p):
+    if p:
+        print(f"Syntax error at token {p.type} ('{p.value}') at line {p.lineno}")
+    else:
+        print("Syntax error at EOF")
+
+def build_parser():
+    """Build and return the parser."""
+    return yacc.yacc()
+
+def parse_program(input_text):
+    """Parse input text and return the AST."""
+    from analex import build_lexer
+    
+    lexer = build_lexer()
+    parser = build_parser()
+    
+    try:
+        ast = parser.parse(input_text, lexer=lexer)
+        return ast
+    except Exception as e:
+        print(f"Parse error: {e}")
+        return None
