@@ -215,8 +215,10 @@ def p_statement(p):
 # rule for assignment statement
 def p_assignment_statement(p):
     '''assignment_statement : ID ASSIGN expression'''
-    variable_node = Identifier(name=p[1])
-    p[0] = AssignmentStatement(variable=variable_node, expression=p[3])
+    # ID is p[1], ASSIGN is p[2]. Let's use line of ID for the Identifier node,
+    # and line of ASSIGN for the AssignmentStatement node.
+    variable_node = Identifier(name=p[1], lineno=p.lineno(1)) # Pass lineno
+    p[0] = AssignmentStatement(variable=variable_node, expression=p[3], lineno=p.lineno(2)) # Pass lineno
 
 # rule for expressions
 def p_expression(p):
@@ -291,16 +293,15 @@ def p_factor(p):
             elif p.slice[1].type == 'FALSE':
                 p[0] = Literal(False) # Create Literal AST node with Python's False
             elif p.slice[1].type == 'ID':
-                p[0] = Identifier(name=p[1])
+                p[0] = Identifier(name=p[1], lineno=p.lineno(1)) # Pass lineno
     elif p.slice[1].type == 'LPAREN':
         # factor : LPAREN expression RPAREN
         p[0] = p[2]
     elif p.slice[2].type == 'LBRACKET':
         # factor : factor LBRACKET expression RBRACKET
         p[0] = ArrayAccess(array=p[1], index=p[3])
-    elif p.slice[2].type == 'LPAREN':
-        # factor : ID LPAREN expression_list RPAREN
-         p[0] = FunctionCall(name=p[1], arguments=p[3])
+    elif len(p) == 5 and p.slice[1].type == 'ID' and p.slice[2].type == 'LPAREN': # factor : ID LPAREN expression_list RPAREN
+         p[0] = FunctionCall(name=p[1], arguments=p[3], lineno=p.lineno(1)) # Pass lineno for FunctionCall
     elif len(p) == 3:
         # factor : MINUS factor %prec UMINUS
         p[0] = UnaryOperation(operator=p[1], operand=p[2])

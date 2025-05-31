@@ -70,6 +70,8 @@ def semantic_check(node, symbol_table):
         register_builtin_functions(symbol_table)
         symbol_table._builtins_registered = True
 
+    node_lineno = getattr(node, 'lineno', None) # Helper to get line number if available
+
     if isinstance(node, Program): # for program node
         semantic_check(node.header, symbol_table) # check program header
         semantic_check(node.block, symbol_table) # check program block
@@ -83,15 +85,32 @@ def semantic_check(node, symbol_table):
         for ident_original in node.id_list: # check each identifier in the program header
             ident_lower = ident_original.lower()
             if symbol_table.resolve(ident_lower): # identifier already exists
-                raise Exception(f"Identifier '{ident_original}' already declared.")
+                # To get line number for ident_original, it should be an Identifier node
+                # or ProgramHeader should store line numbers for its IDs.
+                # For now, using ProgramHeader's line number if available.
+                line_info = f"Line {node_lineno}: " if node_lineno else ""
+                raise Exception(f"{line_info}Identifier '{ident_original}' already declared in program header.")
             symbol_table.define(Symbol(name=ident_lower, sym_type='parameter', kind='program_param', address_or_offset=0)) # define the identifier as a program parameter
 
     elif isinstance(node, VariableDeclaration): # for variable declaration node
         for var in node.variable_list: # check each variable in the declaration
-            for var_name_original in var.id_list: # check each identifier in the variable
+            # var is a Variable node (id_list, var_type). var.id_list contains strings.
+            # To get specific line numbers for each var_name_original,
+            # the Identifier nodes within p_id_list in anasin.py should store their line numbers,
+            # and p_variable should construct Variable with these Identifier nodes.
+            # For simplicity, using VariableDeclaration's line number here.
+            var_decl_lineno = getattr(node, 'lineno', None)
+            line_info_decl = f"Line {var_decl_lineno}: " if var_decl_lineno else ""
+
+            for var_name_original in var.id_list: # var_name_original is a string here
                 var_name_lower = var_name_original.lower()
                 if symbol_table.resolve(var_name_lower): # if the variable already exists
-                    raise Exception(f"Variable '{var_name_original}' already declared.")
+                    # Ideally, find the Identifier node for var_name_original to get its specific line.
+                    # This requires id_list in Variable AST node to store Identifier objects, not just names.
+                    # If var.id_list contained Identifier objects:
+                    # id_node = next((id_obj for id_obj in var.id_list if id_obj.name == var_name_original), None)
+                    # line_info_var = f"Line {id_node.lineno}: " if id_node and hasattr(id_node, 'lineno') else line_info_decl
+                    raise Exception(f"{line_info_decl}Variable '{var_name_original}' already declared.")
                 offset = symbol_table.get_local_var_offset()
                 symbol = Symbol(
                     name=var_name_lower,
@@ -130,21 +149,24 @@ def semantic_check(node, symbol_table):
         func_name_original = node.name
         func_name_lower = func_name_original.lower()
         symbol = symbol_table.resolve(func_name_lower)
+        line_info = f"Line {node_lineno}: " if node_lineno else ""
+
         if not symbol: # if the function is not declared
-            raise Exception(f"Function '{func_name_original}' not declared.")
+            raise Exception(f"{line_info}Function '{func_name_original}' not declared.")
         if symbol.kind != 'function' and symbol.kind != 'procedure': # if the symbol is not a function or procedure
-            raise Exception(f"'{func_name_original}' is not a function or procedure.")
+            raise Exception(f"{line_info}'{func_name_original}' is not a function or procedure.")
         if len(node.arguments) != len(symbol.params_info): # check if the number of arguments matches the function's parameters
-            raise Exception(f"Function '{func_name_original}' expects {len(symbol.params_info)} arguments, but {len(node.arguments)} were provided.")
+            raise Exception(f"{line_info}Function '{func_name_original}' expects {len(symbol.params_info)} arguments, but {len(node.arguments)} were provided.")
         for arg in node.arguments: # check each argument in the function call
             semantic_check(arg, symbol_table)
 
     elif isinstance(node, FunctionDeclaration): # for function declaration node
         func_name_original = node.name
         func_name_lower = func_name_original.lower()
+        line_info = f"Line {node_lineno}: " if node_lineno else ""
 
         if symbol_table.resolve(func_name_lower):
-            raise Exception(f"Identifier '{func_name_original}' already declared.")
+            raise Exception(f"{line_info}Identifier '{func_name_original}' already declared.")
 
         symbol = Symbol(
             name=func_name_lower,
@@ -252,7 +274,10 @@ def check_identifier_exists(identifier_node, symbol_table):
     identifier_name_original = identifier_node.name
     identifier_name_lower = identifier_name_original.lower()
     if not symbol_table.resolve(identifier_name_lower):
-        raise Exception(f"Identifier '{identifier_name_original}' not declared in this scope.")
+        line_info = ""
+        if hasattr(identifier_node, 'lineno') and identifier_node.lineno is not None:
+            line_info = f"Line {identifier_node.lineno}: "
+        raise Exception(f"{line_info}Identifier '{identifier_name_original}' not declared in this scope.")
 
 # register built-in functions and procedures in the global symbol table
 def register_builtin_functions(symbol_table):
