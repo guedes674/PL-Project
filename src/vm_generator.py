@@ -589,15 +589,15 @@ class CodeGenerator:
     # ────────  Expressions ────────────────────────────────────────
     def visit_Literal(self, node):
         value = node.value
-        if isinstance(value, int):
+        if isinstance(value, bool):  # Check for bool first
+            self.emit(f"PUSHI {1 if value else 0}")
+        elif isinstance(value, int): # Now, this will only catch non-boolean integers
             self.emit(f"PUSHI {value}")
         elif isinstance(value, float):
             self.emit(f"PUSHF {value}")
         elif isinstance(value, str):
             escaped_value = value.replace('"', '\\"')
             self.emit(f'PUSHS "{escaped_value}"')
-        elif isinstance(value, bool):
-            self.emit(f"PUSHI {1 if value else 0}")
         else:
             raise TypeError(f"Unsupported literal type: {type(value)} for value {value}")
 
@@ -745,7 +745,8 @@ class CodeGenerator:
         self.visit(node.left)
         self.visit(node.right)
         
-        op = node.operator
+        original_op = node.operator # Keep original for error message
+        op = original_op.upper()    # Convert operator to uppercase for consistent checks
         
         left_expr_type = self.determine_expression_type(node.left)
         right_expr_type = self.determine_expression_type(node.right)
@@ -759,36 +760,30 @@ class CodeGenerator:
         elif op == '*':
             self.emit("FMUL" if is_float_operation else "MUL")
         elif op == '/': # Pascal '/' is typically real division
-            # Ensure operands are float. If not, ITOF would be needed.
-            # Assuming they are pushed as floats or ITOF happened during visit_Literal/Identifier if type was known.
             self.emit("FDIV")
         elif op == 'DIV': # Integer division
             self.emit("DIV")
         elif op == 'MOD': # Integer modulo
             self.emit("MOD")
         elif op == '=':
-            # Check if this is a character comparison (string[index] = '1')
+            # This section handles general equality.
+            # The specific char comparison for '=' is handled at the top of this method.
             is_char_comparison = False
             char_value = None
-            
-            # Check if right side is a character literal
             if isinstance(node.right, ast_nodes.Literal) and isinstance(node.right.value, str) and len(node.right.value) == 1:
                 is_char_comparison = True
                 char_value = ord(node.right.value)
             
-            # Check if left side is array access to a string
             is_string_access = False
             if isinstance(node.left, ast_nodes.ArrayAccess) and isinstance(node.left.array, ast_nodes.Identifier):
                 left_sym = self.current_scope.resolve(node.left.array.name)
                 if left_sym and left_sym.sym_type.upper() == 'STRING':
                     is_string_access = True
             
-            if is_char_comparison and is_string_access:
-                # Replace the string literal with its ASCII code for comparison
+            if is_char_comparison and is_string_access: # This condition might be unreachable if the top char comparison returns
                 self.emit(f"PUSHI {char_value}", f"ASCII code for '{node.right.value}'")
                 self.emit("EQUAL", "Compare character codes")
             else:
-                # Regular equality comparison
                 self.emit("EQUAL")
         elif op == '<':
             self.emit("FINF" if is_float_operation else "INF")
@@ -799,14 +794,14 @@ class CodeGenerator:
         elif op == '>=':
             self.emit("FSUPEQ" if is_float_operation else "SUPEQ")
         elif op == '<>':
-            self.emit("EQUAL") # Perform equality check
-            self.emit("NOT")   # Negate the result
+            self.emit("EQUAL") 
+            self.emit("NOT")   
         elif op == 'AND':
             self.emit("AND")
         elif op == 'OR':
             self.emit("OR")
         else:
-            raise ValueError(f"Unsupported binary operator: {op}")
+            raise ValueError(f"Unsupported binary operator: {original_op}")
 
     def visit_FunctionCall(self, node):
         func_name_original = node.name

@@ -253,6 +253,8 @@ def p_factor(p):
     '''factor : NUMBER
               | STRING
               | ID
+              | TRUE
+              | FALSE
               | LPAREN expression RPAREN
               | factor LBRACKET expression RBRACKET  
               | ID LPAREN expression_list RPAREN  
@@ -261,12 +263,18 @@ def p_factor(p):
               '''
     if len(p) == 2:
         # factor : NUMBER | STRING | ID
-        if isinstance(p[1], (int, float, str)) and p.slice[1].type in ('NUMBER', 'STRING'):
-            p[0] = Literal(value=p[1]) # create a Literal AST node
-        elif p.slice[1].type == 'ID':
-            p[0] = Identifier(name=p[1]) # create an Identifier AST node
-        else:
-            p[0] = p[1] # p[1] is already a Literal or Identifier AST node
+        if len(p) == 2:
+            if p.slice[1].type == 'NUMBER': # Assuming NUMBER token holds numeric value
+                # You might already have logic to distinguish int/real for p[1]
+                p[0] = Literal(p[1])
+            elif p.slice[1].type == 'STRING': # Assuming STRING token holds string value
+                p[0] = Literal(p[1])
+            elif p.slice[1].type == 'TRUE':
+                p[0] = Literal(True) # Create Literal AST node with Python's True
+            elif p.slice[1].type == 'FALSE':
+                p[0] = Literal(False) # Create Literal AST node with Python's False
+            elif p.slice[1].type == 'ID':
+                p[0] = Identifier(name=p[1])
     elif p.slice[1].type == 'LPAREN':
         # factor : LPAREN expression RPAREN
         p[0] = p[2]

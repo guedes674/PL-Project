@@ -1,0 +1,54 @@
+    PUSHI 0 // Initial stack value for global 'num' (gp[0])
+    PUSHI 0 // Initial stack value for global 'i' (gp[1])
+    PUSHI 0 // Initial stack value for global 'primo' (gp[2])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Introduza um número inteiro positivo:"
+    WRITES
+    WRITELN
+    READ // Read string from input for 'num'
+    ATOI // Convert to integer for 'num'
+    STOREG 0 // Store to global 'num'
+    PUSHI 1
+    STOREG 2 // Store to global variable 'primo'
+    PUSHI 2
+    STOREG 1 // Store to global variable 'i'
+whilestart0:
+    PUSHG 1 // Push global 'i'
+    PUSHG 0 // Push global 'num'
+    PUSHI 2
+    DIV
+    INFEQ
+    PUSHG 2 // Push global 'primo'
+    AND
+    JZ whileend1 // If condition is false, exit while loop
+    PUSHG 0 // Push global 'num'
+    PUSHG 1 // Push global 'i'
+    MOD
+    PUSHI 0
+    EQUAL
+    JZ endif3 // If condition is false (no else), jump to endif
+    PUSHI 0
+    STOREG 2 // Store to global variable 'primo'
+endif3:
+    PUSHG 1 // Push global 'i'
+    PUSHI 1
+    ADD
+    STOREG 1 // Store to global variable 'i'
+    JUMP whilestart0 // Repeat while loop
+whileend1:
+    PUSHG 2 // Push global 'primo'
+    JZ else4 // If condition is false, jump to else
+    PUSHG 0 // Push global 'num'
+    WRITEI
+    PUSHS " é um número primo"
+    WRITES
+    WRITELN
+    JUMP endif5 // Skip else block
+else4:
+    PUSHG 0 // Push global 'num'
+    WRITEI
+    PUSHS " não é um número primo"
+    WRITES
+    WRITELN
+endif5:
+    STOP // End of program

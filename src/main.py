@@ -4,7 +4,10 @@ from anasin import parse_program
 from anasem import semantic_check, SymbolTable
 from vm_generator import CodeGenerator
 
-OUTPUT_DIR = "../output"
+# Get the directory where main.py is located
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "..", "output") # Path relative to this script file
+
 
 def read_input():
     print("Welcome to the Standard Pascal Compiler")

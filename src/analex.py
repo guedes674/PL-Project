@@ -82,7 +82,9 @@ tokens = [
     'READ',
     'READLN', 
     'WRITE',
-    'WRITELN'
+    'WRITELN',
+    'TRUE',
+    'FALSE',
 ]
 
 precedence = (
@@ -334,6 +336,16 @@ def t_WRITE(t):
 
 def t_WRITELN(t):
     r'WRITELN'
+    return t
+
+def t_TRUE(t):
+    r'TRUE'
+    t.value = True
+    return t
+
+def t_FALSE(t):
+    r'FALSE'
+    t.value = False
     return t
 
 def t_NUMBER(t):
