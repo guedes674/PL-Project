@@ -13,7 +13,7 @@ def read_input():
     program_content = ""
 
     if code_input == "":
-        file_path = "../input/input_errors.pas"
+        file_path = "../input/mock_pascal.pas"
     elif code_input.lower().endswith(".pas"):
         file_path = code_input
     else:

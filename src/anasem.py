@@ -58,6 +58,13 @@ class SymbolTable:
 
 # perform semantic checks on the AST nodes for the given symbol table
 def semantic_check(node, symbol_table):
+    if node is None:
+        return
+
+    if symbol_table.parent is None and not hasattr(symbol_table, "_builtins_registered"):
+        register_builtin_functions(symbol_table)
+        symbol_table._builtins_registered = True
+
     if isinstance(node, Program): # for program node
         semantic_check(node.header, symbol_table) # check program header
         semantic_check(node.block, symbol_table) # check program block
@@ -113,7 +120,7 @@ def semantic_check(node, symbol_table):
         semantic_check(node.index, symbol_table) # check the index used for accessing the array
 
     elif isinstance(node, FunctionCall): # for function call node
-        symbol = symbol_table.resolve(node.name) 
+        symbol = symbol_table.resolve(node.name.lower())
         if not symbol: # if the function is not declared
             raise Exception(f"Function '{node.name}' not declared.")
         if symbol.kind != 'function' and symbol.kind != 'procedure': # if the symbol is not a function or procedure
@@ -207,3 +214,37 @@ def check_identifier_exists(identifier_node, symbol_table):
     assert isinstance(identifier_node, Identifier)
     if not symbol_table.resolve(identifier_node.name):
         raise Exception(f"Identifier '{identifier_node.name}' not declared in this scope.")
+
+# register built-in functions and procedures in the global symbol table
+def register_builtin_functions(symbol_table):
+    builtins = [
+        ("length", "INTEGER", [("STRING", False)]),
+        ("uppercase", "STRING", [("STRING", False)]),
+        ("lowercase", "STRING", [("STRING", False)]),
+        ("abs", "INTEGER", [("INTEGER", False)]),
+        ("sqr", "INTEGER", [("INTEGER", False)]),
+        ("sqrt", "REAL", [("REAL", False)]),
+        ("pred", "INTEGER", [("INTEGER", False)]),
+        ("succ", "INTEGER", [("INTEGER", False)]),
+    ]
+
+    for name, return_type, params in builtins:
+        param_symbols = []
+        for i, (ptype, is_var) in enumerate(params):
+            param_symbols.append(Symbol(
+                name=f"param{i}",
+                sym_type=ptype,
+                kind="parameter",
+                address_or_offset=i,
+                is_var_param=is_var
+            ))
+
+        builtin_symbol = Symbol(
+            name=name.lower(),
+            sym_type="function",
+            kind="function",
+            address_or_offset=f"BUILTIN_{name.upper()}",
+            return_type=return_type,
+            params_info=param_symbols
+        )
+        symbol_table.define(builtin_symbol)

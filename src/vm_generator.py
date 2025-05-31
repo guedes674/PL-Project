@@ -10,22 +10,62 @@ class CodeGenerator:
         self.globals_handled_pre_start = set() # To track globals processed before START
 
         # Predeclare built-in routines
-        writeln_sym = Symbol(
-            name="writeln", sym_type="VOID", kind="procedure", address_or_offset="BUILTIN_WRITELN"
-        )
-        self.current_scope.define(writeln_sym)
-        length_sym = Symbol(
-            name="length", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_LENGTH", return_type="INTEGER"  # Changed "Length" to "length"
-        )
-        self.current_scope.define(length_sym)
-        uppercase_sym = Symbol(
-            name="uppercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_UPPERCASE", return_type="STRING"  # Changed "UpperCase" to "uppercase"
-        )
-        self.current_scope.define(uppercase_sym)
-        lowercase_sym = Symbol(
-            name="lowercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_LOWERCASE", return_type="STRING"  # Changed "LowerCase" to "lowercase"
-        )
-        self.current_scope.define(lowercase_sym)
+        # Procedures
+        self.current_scope.define(Symbol(
+            name="writeln", sym_type="VOID", kind="procedure", address_or_offset="BUILTIN_WRITELN",
+            params_info=[] # Placeholder, actual handling is dynamic
+        ))
+
+        # Functions
+        self.current_scope.define(Symbol(
+            name="length", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_LENGTH", return_type="INTEGER",
+            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="uppercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_UPPERCASE", return_type="STRING",
+            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="lowercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_LOWERCASE", return_type="STRING",
+            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="abs", sym_type="ANY", kind="function", address_or_offset="BUILTIN_ABS", return_type="ANY", # Type determined at call site
+            params_info=[Symbol(name="x", sym_type="ANY", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="sqr", sym_type="ANY", kind="function", address_or_offset="BUILTIN_SQR", return_type="ANY", # Type determined at call site
+            params_info=[Symbol(name="x", sym_type="ANY", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="sqrt", sym_type="REAL", kind="function", address_or_offset="BUILTIN_SQRT", return_type="REAL",
+            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="pred", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_PRED", return_type="INTEGER",
+            params_info=[Symbol(name="x", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="succ", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_SUCC", return_type="INTEGER",
+            params_info=[Symbol(name="x", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="ord", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_ORD", return_type="INTEGER",
+            params_info=[Symbol(name="c", sym_type="ANY", kind="parameter", address_or_offset=0)] # CHAR or STRING[1]
+        ))
+        self.current_scope.define(Symbol(
+            name="chr", sym_type="CHAR", kind="function", address_or_offset="BUILTIN_CHR", return_type="CHAR", # VM might treat CHAR as INT
+            params_info=[Symbol(name="i", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="sin", sym_type="REAL", kind="function", address_or_offset="BUILTIN_SIN", return_type="REAL",
+            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
+        ))
+        self.current_scope.define(Symbol(
+            name="cos", sym_type="REAL", kind="function", address_or_offset="BUILTIN_COS", return_type="REAL",
+            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
+        ))
+
         # Switch to the main global scope after built-ins
         self.current_scope = SymbolTable(parent=self.current_scope, scope_name="global")
 
@@ -62,7 +102,6 @@ class CodeGenerator:
                 self.current_scope = self.current_scope.parent
         else:
             print("Warning: Popping global scope (should not happen).")
-
 
     def generate(self, node):
         self.visit(node)
@@ -811,62 +850,180 @@ class CodeGenerator:
             raise ValueError(f"Unsupported binary operator: {op}")
 
     def visit_FunctionCall(self, node):
-        func_name = node.name
-        func_sym = self.current_scope.resolve(func_name)
-        if not func_sym or func_sym.kind not in ['function','procedure']:
-            raise ValueError(f"Call to undefined function/procedure '{func_name}'.")
+        func_name_original = node.name
+        func_name_lower = func_name_original.lower()
+
+        # Try resolving with lowercase name first (catches built-ins like "length")
+        func_sym = self.current_scope.resolve(func_name_lower)
+
+        if not func_sym:
+            # If lowercase didn't find it, try original casing.
+            func_sym = self.current_scope.resolve(func_name_original)
+
+        if not func_sym:
+            raise ValueError(f"Call to undefined function/procedure '{func_name_original}'.")
+        
+        if func_sym.kind not in ['function', 'procedure']:
+            raise ValueError(f"'{func_name_original}' is not a callable function or procedure (kind: {func_sym.kind}). It might be a variable or constant.")
+
+        # --- Argument Processing for Built-ins (common checks) ---
+        num_actual_args = len(node.arguments) if node.arguments else 0
+        
+        # Helper for argument checking
+        def check_args(expected_count, func_display_name):
+            if num_actual_args != expected_count:
+                raise ValueError(f"Function '{func_display_name}' expects {expected_count} argument(s), got {num_actual_args}.")
+            if expected_count > 0:
+                return node.arguments[0] # Return first arg for convenience
+            return None
 
         # --- SPECIAL CASE: built‐in routines ---
-        if func_name.lower() == "writeln":
-            if not node.arguments: # writeln without args
-                self.emit("WRITELN")
-            else:
-                for arg_expr in node.arguments:
-                    self.visit(arg_expr)
-                    arg_type = self.determine_expression_type(arg_expr)
-                    if arg_type == 'STRING':
-                        self.emit("WRITES", f"Write string argument")
-                    elif arg_type == 'REAL':
-                        self.emit("WRITEF", f"Write real argument")
-                    elif arg_type == 'INTEGER':
-                        self.emit("WRITEI", f"Write integer argument")
-                    elif arg_type == 'BOOLEAN':
-                        self.emit("WRITEI", f"Write boolean argument as integer") # VM prints 0 or 1
-                    else:
-                        self.emit("WRITEI", f"Write argument (defaulting to integer for unknown type: {arg_type})")
-                self.emit("WRITELN")
-            return
-        elif func_name.lower() == "length":
-            arg = node.arguments[0]
-            if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str): # Constant folding
-                compile_time_len = len(arg.value)
-                self.emit(f"PUSHI {compile_time_len}", f"Folded Length('{arg.value}') -> {compile_time_len}")
+        if func_sym.address_or_offset and isinstance(func_sym.address_or_offset, str) and func_sym.address_or_offset.startswith("BUILTIN_"):
+            builtin_name = func_sym.address_or_offset
+            
+            if builtin_name == "BUILTIN_WRITELN": # Technically a procedure
+                if not node.arguments:
+                    self.emit("WRITELN")
+                else:
+                    for arg_expr in node.arguments:
+                        self.visit(arg_expr)
+                        arg_type = self.determine_expression_type(arg_expr)
+                        if arg_type == 'STRING': self.emit("WRITES")
+                        elif arg_type == 'REAL': self.emit("WRITEF")
+                        elif arg_type == 'INTEGER': self.emit("WRITEI")
+                        elif arg_type == 'BOOLEAN': self.emit("WRITEI") # VM prints 0 or 1
+                        else: self.emit("WRITEI", f"Write argument (defaulting to integer for unknown type: {arg_type})")
+                    self.emit("WRITELN")
                 return
-            self.visit(arg) # Pushes string address
-            self.emit("STRLEN", "Call STRLEN for Length(string)")
-            return
-        elif func_name.lower() == "uppercase" or func_name.lower() == "lowercase":
-            arg = node.arguments[0]
-            # Constant folding
-            if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str):
-                folded_val = arg.value.upper() if func_name.lower() == "uppercase" else arg.value.lower()
-                escaped = folded_val.replace('"', '\\"')
-                self.emit(f'PUSHS "{escaped}"', f"Folded {func_name}('{arg.value}') -> \"{escaped}\"")
+
+            elif builtin_name == "BUILTIN_LENGTH":
+                arg = check_args(1, func_name_original)
+                # Constant folding for length
+                if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str):
+                    self.emit(f"PUSHI {len(arg.value)}", f"Folded Length('{arg.value}')")
+                    return
+                self.visit(arg) # Pushes string address
+                self.emit("STRLEN", f"VM STRLEN for {func_name_original}")
+                return
+
+            elif builtin_name == "BUILTIN_UPPERCASE":
+                arg = check_args(1, func_name_original)
+                if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str):
+                    folded_val = arg.value.upper()
+                    self.emit(f'PUSHS "{folded_val.replace("\"", "\\\"")}"', f"Folded {func_name_original}('{arg.value}')")
+                    return
+                self.visit(arg)
+                self.emit("UPPER", f"VM UPPER for {func_name_original} (VM dependent)")
+                return
+
+            elif builtin_name == "BUILTIN_LOWERCASE":
+                arg = check_args(1, func_name_original)
+                if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str):
+                    folded_val = arg.value.lower()
+                    self.emit(f'PUSHS "{folded_val.replace("\"", "\\\"")}"', f"Folded {func_name_original}('{arg.value}')")
+                    return
+                self.visit(arg)
+                self.emit("LOWER", f"VM LOWER for {func_name_original} (VM dependent)")
+                return
+
+            elif builtin_name == "BUILTIN_ABS":
+                arg = check_args(1, func_name_original)
+                self.visit(arg)
+                arg_type = self.determine_expression_type(arg)
+                abs_end_label = self.new_label("abs_end")
+                if arg_type == "INTEGER":
+                    self.emit("DUP 0", "Duplicate value for abs check") # val, val
+                    self.emit("PUSHI 0") # val, val, 0
+                    self.emit("INF")     # val, (val < 0)
+                    self.emit(f"JZ {abs_end_label}") # val is on stack if val >= 0
+                    # val < 0, so val is on stack. Negate it.
+                    self.emit("PUSHI 0") # val, 0
+                    self.emit("SWAP")    # 0, val
+                    self.emit("SUB")     # -val
+                elif arg_type == "REAL":
+                    self.emit("DUP 0")
+                    self.emit("PUSHF 0.0") # Assuming PUSHF for float 0.0
+                    self.emit("FINF")
+                    self.emit(f"JZ {abs_end_label}")
+                    self.emit("PUSHF 0.0")
+                    self.emit("SWAP")
+                    self.emit("FSUB")
+                else:
+                    raise TypeError(f"Unsupported type {arg_type} for ABS function.")
+                self.emit_label(abs_end_label)
+                return
+
+            elif builtin_name == "BUILTIN_SQR":
+                arg = check_args(1, func_name_original)
+                self.visit(arg)
+                arg_type = self.determine_expression_type(arg)
+                self.emit("DUP 0", "Duplicate value for sqr")
+                if arg_type == "INTEGER": self.emit("MUL")
+                elif arg_type == "REAL": self.emit("FMUL")
+                else: raise TypeError(f"Unsupported type {arg_type} for SQR function.")
+                return
+
+            elif builtin_name == "BUILTIN_SQRT":
+                arg = check_args(1, func_name_original)
+                self.visit(arg) # Pushes argument
+                # Ensure it's float for FSQRT (hypothetical)
+                arg_type = self.determine_expression_type(arg)
+                if arg_type == "INTEGER": self.emit("ITOF")
+                self.emit("FSQRT", f"VM FSQRT for {func_name_original} (VM dependent or needs polyfill)") # Assuming FSQRT exists
+                return
+
+            elif builtin_name == "BUILTIN_PRED":
+                arg = check_args(1, func_name_original)
+                self.visit(arg) # Pushes integer
+                self.emit("PUSHI 1")
+                self.emit("SUB", f"VM SUB for {func_name_original}")
+                return
+
+            elif builtin_name == "BUILTIN_SUCC":
+                arg = check_args(1, func_name_original)
+                self.visit(arg) # Pushes integer
+                self.emit("PUSHI 1")
+                self.emit("ADD", f"VM ADD for {func_name_original}")
                 return
             
-            # For non-constant strings, just pass through the original string for now
-            self.visit(arg)  # Pushes string address
-            
-            # Remove the incomplete implementation
-            # Instead of trying to implement character-by-character conversion
-            # which is complicated without proper VM support
-            
-            # Just add a comment about the limitation
-            self.emit("# Note: This is a simplified implementation that returns the original string")
-            # Don't emit DUP, STRLEN, ALLOCN if you're not going to use them properly
-            
-            return
-        # --- END SPECIAL CASE ---
+            elif builtin_name == "BUILTIN_ORD":
+                arg = check_args(1, func_name_original)
+                self.visit(arg) # Pushes string address (for char/string[1]) or char (as int)
+                arg_type = self.determine_expression_type(arg)
+                if arg_type == "STRING": # Assuming it's a single char string or we take first char
+                    self.emit("CHRCODE", f"VM CHRCODE for {func_name_original}")
+                elif arg_type == "CHAR": # If CHAR is a distinct type represented as int, it's already ord
+                    pass # Value is already the ordinal
+                elif arg_type == "INTEGER": # If it was already an integer (e.g. ord(65))
+                    pass # Value is already the ordinal
+                else:
+                    raise TypeError(f"Unsupported type {arg_type} for ORD function. Expects CHAR or STRING.")
+                return
+
+            elif builtin_name == "BUILTIN_CHR":
+                arg = check_args(1, func_name_original)
+                self.visit(arg) # Pushes integer
+                # CHR returns a character. VM's WRITECHR prints.
+                # To return a char value (as int/ASCII), it's already on stack.
+                # If it needs to be a string of 1 char, that's more complex.
+                self.emit(f"# {func_name_original}(int) -> char (ASCII value on stack). VM may need specific handling for char type results.", "")
+                return
+
+            elif builtin_name == "BUILTIN_SIN":
+                arg = check_args(1, func_name_original)
+                self.visit(arg)
+                arg_type = self.determine_expression_type(arg)
+                if arg_type == "INTEGER": self.emit("ITOF")
+                self.emit("FSIN", f"VM FSIN for {func_name_original}")
+                return
+
+            elif builtin_name == "BUILTIN_COS":
+                arg = check_args(1, func_name_original)
+                self.visit(arg)
+                arg_type = self.determine_expression_type(arg)
+                if arg_type == "INTEGER": self.emit("ITOF")
+                self.emit("FCOS", f"VM FCOS for {func_name_original}")
+                return
 
         # --- User-defined function/procedure ---
         # 1. Check argument count matches the symbol’s signature
@@ -874,7 +1031,7 @@ class CodeGenerator:
         num_actual_args = len(node.arguments) if node.arguments else 0
         if num_expected_params != num_actual_args:
             raise ValueError(
-                f"Argument count mismatch for {func_name}: expected {num_expected_params}, got {num_actual_args}"
+                f"Argument count mismatch for {func_name_original}: expected {num_expected_params}, got {num_actual_args}"
             )
 
         # 2. Push each argument in left‐to‐right order
@@ -886,7 +1043,7 @@ class CodeGenerator:
                         raise ValueError(f"VAR-parameter argument for '{param_info.name}' must be a variable.")
                     arg_sym = self.current_scope.resolve(arg_expr.name)
                     if not arg_sym:
-                        raise ValueError(f"Undefined variable '{arg_expr.name}' in VAR call to {func_name}.")
+                        raise ValueError(f"Undefined variable '{arg_expr.name}' in VAR call to {func_name_original}.")
 
                     if arg_sym.scope_level == 0: # Global var
                         self.emit("PUSHGP", "Push global base")
@@ -903,7 +1060,7 @@ class CodeGenerator:
                     self.visit(arg_expr)
 
         # Call the function/procedure
-        self.emit(f"PUSHA {func_sym.address_or_offset}", f"Push address of {func_name}")
+        self.emit(f"PUSHA {func_sym.address_or_offset}", f"Push address of {func_name_original}")
         self.emit("CALL")
         # If it's a procedure called as a statement and it's a function (Pascal allows this, value discarded)
         # and if the VM leaves a return value for all functions, we might need to POP it if func_sym.return_type != "VOID"
