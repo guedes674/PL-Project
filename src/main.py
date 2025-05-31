@@ -1,5 +1,5 @@
 from anasin import parse_program
-from vm_generator import CodeGenerator # Import the CodeGenerator
+from vm_generator import CodeGenerator
 
 def main():
     print("Welcome to the Standard Pascal Compiler")
@@ -11,7 +11,7 @@ def main():
 
     program_content = ""
     if code_input == "":
-        file_path = "../input/mock_pascal.pas"
+        file_path = "../input/example6.pas"
         try:
             with open(file_path, 'r') as f:
                 program_content = f.read()
@@ -35,22 +35,15 @@ def main():
             print(f"Error reading file {file_path}: {e}")
             return
     else:
-        program_content = code_input # Assume direct code input
+        program_content = code_input
 
-    if not program_content.strip(): # Check if there's any content to parse
+    if not program_content.strip():
         print("No code to parse.")
         return
 
     ast = parse_program(program_content)
     if ast:
         print("AST generated successfully:")
-        # print(ast) # You can keep this for debugging the AST if you like
-        
-        # Navigate the AST (optional, for verification)
-        # print(f"Program name: {ast.header.name}")
-        # print(f"Variables: {ast.block.declarations}")
-        # print(f"Statements: {ast.block.compound_statement.statement_list}")
-
         print("\nGenerating VM code...")
         generator = CodeGenerator()
         try:
@@ -59,8 +52,8 @@ def main():
             for instruction in vm_code:
                 print(instruction)
             
-            # Optionally, write to a .vm file
-            output_vm_file = "output.vm" # Or derive from input filename
+            # optionally, write to a .vm file
+            output_vm_file = "output.vm"
             with open(output_vm_file, 'w') as f:
                 for instruction in vm_code:
                     f.write(instruction + "\n")
@@ -68,9 +61,6 @@ def main():
 
         except Exception as e:
             print(f"\nError during VM code generation: {e}")
-            # You might want to print more detailed traceback here for debugging
-            # import traceback
-            # traceback.print_exc()
 
     else:
         print("Failed to parse program")

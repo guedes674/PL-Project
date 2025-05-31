@@ -55,6 +55,7 @@ tokens = [
     'STRING',
     'PLUS',
     'MINUS',
+    'UMINUS',
     'TIMES',
     'DIVIDE',
     'LPAREN',
@@ -85,11 +86,12 @@ tokens = [
 ]
 
 precedence = (
-    ('right', 'TILDE', 'NOT'),
-    ('left', 'TIMES', 'DIVIDE', 'DIV', 'MOD', 'AND', 'AMPERSAND'),
-    ('left', 'PLUS', 'MINUS', 'OR', 'PIPE', 'EXCLAMATION'),
-    ('left', 'EQUALS', 'NE', 'LT', 'LE', 'GT', 'GE', 'IN'),
-    ('left', 'ORELSE', 'ANDTHEN'),
+    ('left', 'OR', 'ORELSE'),
+    ('left', 'AND', 'ANDTHEN'),
+    ('nonassoc', 'EQUALS', 'NE', 'LT', 'GT', 'LE', 'GE', 'IN'),
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE', 'DIV', 'MOD'), 
+    ('right', 'UMINUS', 'NOT'), 
 )
 
 t_PLUS = r'\+'

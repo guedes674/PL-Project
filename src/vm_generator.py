@@ -1,4 +1,4 @@
-import ast_nodes  # (Assume your AST classes live here)
+import ast_nodes
 
 class Symbol:
     def __init__(self,
