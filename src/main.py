@@ -1,4 +1,5 @@
 from anasin import parse_program
+from vm_generator import CodeGenerator # Import the CodeGenerator
 
 def main():
     print("Welcome to the Standard Pascal Compiler")
@@ -43,12 +44,34 @@ def main():
     ast = parse_program(program_content)
     if ast:
         print("AST generated successfully:")
-        print(ast)
+        # print(ast) # You can keep this for debugging the AST if you like
         
-        # Navigate the AST
-        print(f"Program name: {ast.header.name}")
-        print(f"Variables: {ast.block.declarations}")
-        print(f"Statements: {ast.block.compound_statement.statement_list}")
+        # Navigate the AST (optional, for verification)
+        # print(f"Program name: {ast.header.name}")
+        # print(f"Variables: {ast.block.declarations}")
+        # print(f"Statements: {ast.block.compound_statement.statement_list}")
+
+        print("\nGenerating VM code...")
+        generator = CodeGenerator()
+        try:
+            vm_code = generator.generate(ast)
+            print("\n--- Generated VM Code ---")
+            for instruction in vm_code:
+                print(instruction)
+            
+            # Optionally, write to a .vm file
+            output_vm_file = "output.vm" # Or derive from input filename
+            with open(output_vm_file, 'w') as f:
+                for instruction in vm_code:
+                    f.write(instruction + "\n")
+            print(f"\nVM code also saved to {output_vm_file}")
+
+        except Exception as e:
+            print(f"\nError during VM code generation: {e}")
+            # You might want to print more detailed traceback here for debugging
+            # import traceback
+            # traceback.print_exc()
+
     else:
         print("Failed to parse program")
 

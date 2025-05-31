@@ -1,6 +1,8 @@
 import ply.yacc as yacc
 from analex import tokens
 from ast_nodes import *
+from ast_nodes import ForStatement # Make sure ForStatement is imported
+from ast_nodes import ArrayAccess # Add this if not present
 
 # Add missing tokens to the lexer - you need to add these to analex.py
 # 'READ', 'READLN', 'WRITE', 'WRITELN', 'NOTEQUAL'
@@ -60,17 +62,30 @@ def p_variable_declaration(p):
     p[0] = VariableDeclaration(variable_list=variables)
 # rule for function/procedure declaration
 def p_function_declaration(p):
-    '''function_declaration : FUNCTION ID parameter_list COLON type SEMICOLON block'''
-    params = [Parameter(id_list=param[2], param_type=param[3], is_var=(param[1] == 'ref')) 
-             for param in p[3]]
-    p[0] = FunctionDeclaration(name=p[2], parameter_list=params, 
+    '''function_declaration : FUNCTION ID parameter_list COLON type SEMICOLON block SEMICOLON''' # Added SEMICOLON at the end
+    # p[3] is parameter_list, p[5] is type, p[7] is block, p[8] is the new SEMICOLON
+    # The AST node still uses p[7] for the block.
+    params_ast = []
+    if p[3]: # p[3] is the list of ('param', 'value'/'ref', id_list, type_node)
+        for param_data in p[3]:
+            # Assuming Parameter AST node takes id_list, param_type, is_var
+            # param_data[0] is 'param', param_data[1] is 'value' or 'ref'
+            # param_data[2] is id_list, param_data[3] is type_node
+            params_ast.append(Parameter(id_list=param_data[2], param_type=param_data[3], is_var=(param_data[1] == 'ref')))
+
+    p[0] = FunctionDeclaration(name=p[2], parameter_list=params_ast, 
                              return_type=p[5], block=p[7])
 
 def p_procedure_declaration(p):
-    '''procedure_declaration : PROCEDURE ID parameter_list SEMICOLON block'''
-    params = [Parameter(id_list=param[2], param_type=param[3], is_var=(param[1] == 'ref')) 
-             for param in p[3]]
-    p[0] = ProcedureDeclaration(name=p[2], parameter_list=params, block=p[5])
+    '''procedure_declaration : PROCEDURE ID parameter_list SEMICOLON block SEMICOLON''' # Added SEMICOLON at the end
+    # p[3] is parameter_list, p[5] is block, p[6] is the new SEMICOLON
+    # The AST node still uses p[5] for the block.
+    params_ast = []
+    if p[3]: # p[3] is the list of ('param', 'value'/'ref', id_list, type_node)
+        for param_data in p[3]:
+            params_ast.append(Parameter(id_list=param_data[2], param_type=param_data[3], is_var=(param_data[1] == 'ref')))
+    
+    p[0] = ProcedureDeclaration(name=p[2], parameter_list=params_ast, block=p[5])
 
 # rule for a list of variables
 def p_variable_list(p):
@@ -84,7 +99,19 @@ def p_variable_list(p):
 # rule for each variable
 def p_variable(p):
     '''variable : id_list COLON type'''
-    p[0] = ('variable', p[1], p[3])
+    p[0] = Variable(id_list=p[1], var_type=p[3]) # Changed from tuple to AST Node
+    # If p_variable_declaration expects a list of tuples like ('variable', id_list, type),
+    # then p[0] = ('variable', p[1], p[3]) was fine, but the iteration in p_variable_declaration
+    # "variables = [Variable(id_list=var[1], var_type=var[2]) for var in p[2]]"
+    # would need var[1] for id_list and var[2] for type from that tuple.
+    # Let's assume Variable AST node is preferred directly from p_variable if p_variable_list just collects them.
+
+# Adjust p_variable_declaration if p_variable now returns Variable AST nodes
+def p_variable_declaration(p):
+    '''variable_declaration : VAR variable_list SEMICOLON'''
+    # If p_variable_list (p[2]) is now a list of Variable AST nodes (due to change in p_variable)
+    # then no further list comprehension is needed here.
+    p[0] = VariableDeclaration(variable_list=p[2]) # p[2] is already a list of Variable AST nodes
 
 # rule for type
 # rule for type
@@ -178,19 +205,46 @@ def p_statement(p):
                  | expression
                  | compound_statement
                  | io_statement
+                 | if_statement        
+                 | while_statement     
+                 | repeat_statement    
+                 | for_statement       
                  | empty'''
     p[0] = p[1]
 
 # rule for IO statements
 def p_io_statement(p):
     '''io_statement : WRITE LPAREN expression_list RPAREN
-                    | WRITELN LPAREN expression_list RPAREN'''
-    p[0] = ('io_call', p[1].lower(), p[3])
+                    | WRITELN LPAREN expression_list RPAREN
+                    | READ LPAREN expression_list RPAREN
+                    | READLN LPAREN expression_list RPAREN'''
+    # p[1] is 'WRITE', 'WRITELN', 'READ', or 'READLN' token
+    # p[3] is the list of expression AST nodes (should be variable identifiers for READ/READLN)
+    p[0] = IOCall(operation=p[1].lower(), arguments=p[3])
 
 # rule for assignment statement
 def p_assignment_statement(p):
     '''assignment_statement : ID ASSIGN expression'''
-    p[0] = ('assignment_statement', p[1], p[3])
+    # Assuming ast_nodes.Identifier exists and p[1] is the variable name string
+    # Assuming p[3] is already an AST node for the expression
+    variable_node = Identifier(name=p[1])
+    p[0] = AssignmentStatement(variable=variable_node, expression=p[3])
+
+# rule for FOR statement
+def p_for_statement(p):
+    '''for_statement : FOR ID ASSIGN expression TO expression DO statement
+                     | FOR ID ASSIGN expression DOWNTO expression DO statement'''
+    control_var_name = p[2]
+    start_expr = p[4]
+    end_expr = p[6]
+    loop_statement = p[8]
+    is_downto = (p[5].lower() == 'downto')
+
+    p[0] = ForStatement(control_variable=Identifier(name=control_var_name),
+                        start_expression=start_expr,
+                        end_expression=end_expr,
+                        statement=loop_statement,
+                        downto=is_downto)
 
 # rule for expression list
 def p_expression_list(p):
@@ -205,30 +259,87 @@ def p_expression_list(p):
         p[0] = [p[1]]
 
 # rule for expressions
-def p_expression_literal(p):
-    '''expression : NUMBER
-                  | STRING'''
-    p[0] = ('literal', p[1])
+def p_expression(p):
+    '''expression : additive_expression
+                  | expression EQUALS additive_expression
+                  | expression NE additive_expression
+                  | expression LT additive_expression
+                  | expression GT additive_expression
+                  | expression LE additive_expression
+                  | expression GE additive_expression
+                  | expression IN additive_expression''' # Assuming IN compares with an additive_expression
+    if len(p) == 2: p[0] = p[1]
+    else: p[0] = BinaryOperation(left=p[1], operator=p[2], right=p[3])
 
-def p_expression_variable(p):
-    '''expression : ID'''
-    p[0] = ('variable', p[1])
+# Next level (additive operators: +, -, OR, ORELSE)
+def p_additive_expression(p):
+    '''additive_expression : multiplicative_expression
+                           | additive_expression PLUS multiplicative_expression
+                           | additive_expression MINUS multiplicative_expression
+                           | additive_expression OR multiplicative_expression
+                           | additive_expression ORELSE multiplicative_expression'''
+    if len(p) == 2: p[0] = p[1]
+    else: p[0] = BinaryOperation(left=p[1], operator=p[2], right=p[3])
 
-def p_expression_group(p):
-    '''expression : LPAREN expression RPAREN'''
-    p[0] = p[2]
+# Next level (multiplicative operators: *, /, DIV, MOD, AND, ANDTHEN)
+def p_multiplicative_expression(p):
+    '''multiplicative_expression : factor 
+                                 | multiplicative_expression TIMES factor
+                                 | multiplicative_expression DIVIDE factor
+                                 | multiplicative_expression DIV factor
+                                 | multiplicative_expression MOD factor
+                                 | multiplicative_expression AND factor
+                                 | multiplicative_expression ANDTHEN factor'''
+    if len(p) == 2: p[0] = p[1]
+    else: p[0] = BinaryOperation(left=p[1], operator=p[2], right=p[3])
 
-def p_expression_binop(p):
-    '''expression : expression PLUS expression
-                  | expression MINUS expression
-                  | expression TIMES expression
-                  | expression DIVIDE expression'''
-    p[0] = ('binop', p[2], p[1], p[3])
+# Highest precedence (literals, identifiers, unary, parens, array access, function call)
+def p_factor(p):
+    '''factor : NUMBER
+              | STRING
+              | ID
+              | LPAREN expression RPAREN
+              | factor LBRACKET expression RBRACKET  
+              | ID LPAREN expression_list RPAREN  
+              | MINUS factor %prec UMINUS          
+              | NOT factor                         
+              '''
+    if len(p) == 2: # NUMBER, STRING, ID
+        if isinstance(p[1], (int, float, str)) and p.slice[1].type in ('NUMBER', 'STRING'):
+            p[0] = Literal(value=p[1])
+        elif p.slice[1].type == 'ID':
+            p[0] = Identifier(name=p[1])
+        else: # Should be factor from unary op
+            p[0] = p[1] 
+    elif p.slice[1].type == 'LPAREN': # ( expression )
+        p[0] = p[2]
+    elif p.slice[2].type == 'LBRACKET': # factor [ expression ]
+        p[0] = ArrayAccess(array=p[1], index=p[3])
+    elif p.slice[2].type == 'LPAREN': # ID ( expression_list )
+         p[0] = FunctionCall(name=p[1], arguments=p[3])
+    elif len(p) == 3: # Unary ops
+        p[0] = UnaryOperation(operator=p[1], operand=p[2])
 
-def p_expression_function_call(p):  # This rule now handles all function calls
-    '''expression : ID LPAREN expression_list RPAREN'''
-    # p[3] will be an empty list if no arguments, due to updated p_expression_list
-    p[0] = ('function_procedure_call', p[1], p[3])
+
+# Then remove p_expression_literal, p_expression_variable, p_expression_group,
+# p_expression_array_access, p_expression_function_call, p_expression_unary
+# and ensure p_expression_binop is replaced by the new structure.
+def p_if_statement(p):
+    '''if_statement : IF expression THEN statement ELSE statement
+                    | IF expression THEN statement'''
+    if len(p) == 7:  # IF expr THEN stmt ELSE stmt
+        p[0] = IfStatement(condition=p[2], then_statement=p[4], else_statement=p[6])
+    else:  # IF expr THEN stmt
+        p[0] = IfStatement(condition=p[2], then_statement=p[4], else_statement=None)
+
+def p_while_statement(p):
+    '''while_statement : WHILE expression DO statement'''
+    p[0] = WhileStatement(condition=p[2], statement=p[4])
+
+def p_repeat_statement(p):
+    '''repeat_statement : REPEAT statement_list UNTIL expression'''
+    # p[2] is statement_list, p[4] is expression
+    p[0] = RepeatStatement(statement_list=p[2], condition=p[4])
 
 def p_error(p):
     if p:
@@ -253,3 +364,14 @@ def parse_program(input_text):
     except Exception as e:
         print(f"Parse error: {e}")
         return None
+
+# Make sure your precedence rules are set up if not already, especially if expressions can be complex.
+# Example precedence (add this towards the end of anasin.py, before build_parser):
+precedence = (
+    ('left', 'OR', 'ORELSE'), # ORELSE from analex.py
+    ('left', 'AND', 'ANDTHEN'),# ANDTHEN from analex.py
+    ('nonassoc', 'EQUALS', 'NE', 'LT', 'GT', 'LE', 'GE', 'IN'), # Corrected token names, added IN
+    ('left', 'PLUS', 'MINUS'),
+    ('left', 'TIMES', 'DIVIDE', 'DIV', 'MOD'), 
+    ('right', 'UMINUS', 'NOT'), 
+)

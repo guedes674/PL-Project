@@ -192,16 +192,16 @@ class RepeatStatement:
         return f"RepeatStatement(statements={self.statement_list}, until={self.condition})"
 
 class ForStatement:
-    def __init__(self, variable, start_expr, end_expr, statement, is_downto=False):
+    def __init__(self, control_variable, start_expression, end_expression, statement, downto=False):
         """Represents a for loop."""
-        self.variable = variable
-        self.start_expr = start_expr
-        self.end_expr = end_expr
-        self.statement = statement
-        self.is_downto = is_downto
+        self.control_variable = control_variable  # Identifier node
+        self.start_expression = start_expression  # Expression node
+        self.end_expression = end_expression    # Expression node
+        self.statement = statement                # Statement node
+        self.downto = downto                      # Boolean
 
     def __repr__(self):
-        return f"ForStatement(var={self.variable}, start={self.start_expr}, end={self.end_expr}, downto={self.is_downto}, statement={self.statement})"
+        return f"ForStatement(var={self.control_variable}, start={self.start_expression}, end={self.end_expression}, downto={self.downto}, statement={self.statement})"
 
 class CaseStatement:
     def __init__(self, expression, case_list):
@@ -277,9 +277,8 @@ class Identifier:
 
 class ArrayAccess:
     def __init__(self, array, index):
-        """Represents array indexing (array[index])."""
-        self.array = array
-        self.index = index
+        self.array = array  # Identifier node for the array variable
+        self.index = index  # Expression node for the index
 
     def __repr__(self):
         return f"ArrayAccess(array={self.array}, index={self.index})"
