@@ -1,0 +1,54 @@
+    PUSHI 0 // Initial stack value for global 'bin' (gp[0])
+    PUSHI 0 // Initial stack value for global 'i' (gp[1])
+    PUSHI 0 // Initial stack value for global 'valor' (gp[2])
+    PUSHI 0 // Initial stack value for global 'potencia' (gp[3])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Introduza uma string binária:"
+    WRITES
+    WRITELN
+    READ // Read string from input for 'bin'
+    STOREG 0 // Store to global 'bin'
+    PUSHI 0
+    STOREG 2 // Store to global variable 'valor'
+    PUSHI 1
+    STOREG 3 // Store to global variable 'potencia'
+    PUSHI 0 // Allocate temp var at FP+4
+    PUSHI 1
+    STOREL 4 // Store evaluated end value of FOR loop for 'i'
+    PUSHG 0 // Push global 'bin'
+    STRLEN // VM STRLEN for length
+    STOREG 1 // Initialize FOR global control var 'i'
+forcheck0:
+    PUSHG 1 // Load global control var 'i' for check
+    PUSHL 4 // Load stored end value for check
+    SUPEQ // Check i >= end_value
+    JZ forend1 // If not (i >= end_value), exit loop
+    PUSHG 0 // Push global string 'bin'
+    PUSHG 1 // Push global 'i'
+    PUSHI 1 // Adjust for 1-based string indexing in Pascal
+    SUB // Convert to 0-based for VM
+    CHARAT // Get character at index from string
+    PUSHI 49 // ASCII code for '1' (49)
+    EQUAL // Compare character codes
+    JZ endif3 // If condition is false (no else), jump to endif
+    PUSHG 2 // Push global 'valor'
+    PUSHG 3 // Push global 'potencia'
+    ADD
+    STOREG 2 // Store to global variable 'valor'
+endif3:
+    PUSHG 3 // Push global 'potencia'
+    PUSHI 2
+    MUL
+    STOREG 3 // Store to global variable 'potencia'
+    PUSHG 1 // Load global control var 'i' for update
+    PUSHI 1
+    SUB // Decrement i
+    STOREG 1 // Store updated global control var 'i'
+    JUMP forcheck0
+forend1:
+    PUSHS "O valor inteiro correspondente é: "
+    WRITES
+    PUSHG 2 // Push global 'valor'
+    WRITEI
+    WRITELN
+    STOP // End of program

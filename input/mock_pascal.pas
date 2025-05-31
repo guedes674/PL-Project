@@ -1,7 +1,7 @@
 program HelloWorld;
 
 var
-    sum, product, square, lengthOfWord: Integer;
+    sum, product, square, lengthOfWord, len2 : Integer;
     upper, lower: String;
 
 begin
@@ -12,5 +12,6 @@ begin
     lengthOfWord := Length('Pascal');
     upper := UpperCase('hello');
     lower := LowerCase('WORLD');
+    len2 := Length(upper);
 
 end.

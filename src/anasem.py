@@ -75,19 +75,21 @@ def semantic_check(node, symbol_table):
         semantic_check(node.compound_statement, symbol_table) # check the compound statement in the block
 
     elif isinstance(node, ProgramHeader): # for program header node
-        for ident in node.id_list: # check each identifier in the program header
-            if symbol_table.resolve(ident): # identifier already exists
-                raise Exception(f"Identifier '{ident}' already declared.")
-            symbol_table.define(Symbol(name=ident, sym_type='parameter', kind='program_param', address_or_offset=0)) # define the identifier as a program parameter
+        for ident_original in node.id_list: # check each identifier in the program header
+            ident_lower = ident_original.lower()
+            if symbol_table.resolve(ident_lower): # identifier already exists
+                raise Exception(f"Identifier '{ident_original}' already declared.")
+            symbol_table.define(Symbol(name=ident_lower, sym_type='parameter', kind='program_param', address_or_offset=0)) # define the identifier as a program parameter
 
     elif isinstance(node, VariableDeclaration): # for variable declaration node
         for var in node.variable_list: # check each variable in the declaration
-            for var_name in var.id_list: # check each identifier in the variable
-                if symbol_table.resolve(var_name): # if the variable already exists
-                    raise Exception(f"Variable '{var_name}' already declared.")
+            for var_name_original in var.id_list: # check each identifier in the variable
+                var_name_lower = var_name_original.lower()
+                if symbol_table.resolve(var_name_lower): # if the variable already exists
+                    raise Exception(f"Variable '{var_name_original}' already declared.")
                 offset = symbol_table.get_local_var_offset()
                 symbol = Symbol(
-                    name=var_name,
+                    name=var_name_lower,
                     sym_type=var.var_type,
                     kind='variable',
                     address_or_offset=offset
@@ -120,32 +122,53 @@ def semantic_check(node, symbol_table):
         semantic_check(node.index, symbol_table) # check the index used for accessing the array
 
     elif isinstance(node, FunctionCall): # for function call node
-        symbol = symbol_table.resolve(node.name.lower())
+        func_name_original = node.name
+        func_name_lower = func_name_original.lower()
+        symbol = symbol_table.resolve(func_name_lower)
         if not symbol: # if the function is not declared
-            raise Exception(f"Function '{node.name}' not declared.")
+            raise Exception(f"Function '{func_name_original}' not declared.")
         if symbol.kind != 'function' and symbol.kind != 'procedure': # if the symbol is not a function or procedure
-            raise Exception(f"'{node.name}' is not a function or procedure.")
+            raise Exception(f"'{func_name_original}' is not a function or procedure.")
         if len(node.arguments) != len(symbol.params_info): # check if the number of arguments matches the function's parameters
-            raise Exception(f"Function '{node.name}' expects {len(symbol.params_info)} arguments, but {len(node.arguments)} were provided.")
+            raise Exception(f"Function '{func_name_original}' expects {len(symbol.params_info)} arguments, but {len(node.arguments)} were provided.")
         for arg in node.arguments: # check each argument in the function call
             semantic_check(arg, symbol_table)
 
     elif isinstance(node, FunctionDeclaration): # for function declaration node
+        func_name_original = node.name
+        func_name_lower = func_name_original.lower()
+
+        if symbol_table.resolve(func_name_lower):
+            raise Exception(f"Identifier '{func_name_original}' already declared.")
+
         symbol = Symbol(
-            name=node.name,
+            name=func_name_lower,
             sym_type='function',
             kind='function',
-            address_or_offset='label_' + node.name,
+            address_or_offset='label_' + func_name_lower,
             return_type=node.return_type,
             params_info=[]
         )
         symbol_table.define(symbol)
-        local_table = SymbolTable(parent=symbol_table, scope_name=node.name) # create a new local symbol table for the function
+        local_table = SymbolTable(parent=symbol_table, scope_name=func_name_lower) 
+
+        # Define implicit variable for function return value
+        implicit_return_var = Symbol(
+            name=func_name_lower,
+            sym_type=node.return_type,
+            kind='variable',
+            address_or_offset=local_table.get_local_var_offset(), # Or a dedicated offset for return values
+            scope_level=1 # Local to function
+        )
+        local_table.define(implicit_return_var)
 
         for param in node.parameter_list: # check each parameter in the function declaration
-            for name in param.id_list: # check each identifier in the parameter
+            for param_name_original in param.id_list: # check each identifier in the parameter
+                param_name_lower = param_name_original.lower()
+                if local_table.resolve(param_name_lower): # Check for redefinition in local scope
+                    raise Exception(f"Parameter '{param_name_original}' redefined in function '{func_name_original}'.")
                 param_sym = Symbol(
-                    name=name,
+                    name=param_name_lower,
                     sym_type=param.param_type,
                     kind='parameter',
                     address_or_offset=local_table.get_param_offset(),
@@ -157,20 +180,29 @@ def semantic_check(node, symbol_table):
         semantic_check(node.block, local_table) # check the block of the function
 
     elif isinstance(node, ProcedureDeclaration): # for procedure declaration node (similar to function)
+        proc_name_original = node.name
+        proc_name_lower = proc_name_original.lower()
+
+        if symbol_table.resolve(proc_name_lower):
+            raise Exception(f"Identifier '{proc_name_original}' already declared.")
+
         symbol = Symbol(
-            name=node.name,
+            name=proc_name_lower,
             sym_type='procedure',
             kind='procedure',
-            address_or_offset='label_' + node.name,
+            address_or_offset='label_' + proc_name_lower,
             params_info=[]
         )
         symbol_table.define(symbol)
-        local_table = SymbolTable(parent=symbol_table, scope_name=node.name) # create a new local symbol table for the procedure
+        local_table = SymbolTable(parent=symbol_table, scope_name=proc_name_lower)
 
         for param in node.parameter_list: # check each parameter in the procedure declaration
-            for name in param.id_list: # check each identifier in the parameter
+            for param_name_original in param.id_list: # check each identifier in the parameter
+                param_name_lower = param_name_original.lower()
+                if local_table.resolve(param_name_lower): # Check for redefinition in local scope
+                    raise Exception(f"Parameter '{param_name_original}' redefined in procedure '{proc_name_original}'.")
                 param_sym = Symbol(
-                    name=name,
+                    name=param_name_lower,
                     sym_type=param.param_type,
                     kind='parameter',
                     address_or_offset=local_table.get_param_offset(),
@@ -212,8 +244,10 @@ def semantic_check(node, symbol_table):
 # check if an identifier exists in the symbol table
 def check_identifier_exists(identifier_node, symbol_table):
     assert isinstance(identifier_node, Identifier)
-    if not symbol_table.resolve(identifier_node.name):
-        raise Exception(f"Identifier '{identifier_node.name}' not declared in this scope.")
+    identifier_name_original = identifier_node.name
+    identifier_name_lower = identifier_name_original.lower()
+    if not symbol_table.resolve(identifier_name_lower):
+        raise Exception(f"Identifier '{identifier_name_original}' not declared in this scope.")
 
 # register built-in functions and procedures in the global symbol table
 def register_builtin_functions(symbol_table):

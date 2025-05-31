@@ -1,84 +1,31 @@
 import ast_nodes
-from anasem import Symbol, SymbolTable
+from anasem import Symbol, SymbolTable, register_builtin_functions
 
 class CodeGenerator:
     def __init__(self):
-        self.code = []
-        self.label_count = 0
+        self.code = [] # List to hold generated VM code
+        self.label_count = 0 # Counter for unique label generation
         self.current_scope = SymbolTable(scope_name="global_init_phase") # Initial phase for global setup
-        self.temp_var_count = 0
+        self.temp_var_count = 0 # Counter for temporary variable offsets
         self.globals_handled_pre_start = set() # To track globals processed before START
 
-        # Predeclare built-in routines
-        # Procedures
-        self.current_scope.define(Symbol(
-            name="writeln", sym_type="VOID", kind="procedure", address_or_offset="BUILTIN_WRITELN",
-            params_info=[] # Placeholder, actual handling is dynamic
-        ))
-
-        # Functions
-        self.current_scope.define(Symbol(
-            name="length", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_LENGTH", return_type="INTEGER",
-            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="uppercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_UPPERCASE", return_type="STRING",
-            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="lowercase", sym_type="STRING", kind="function", address_or_offset="BUILTIN_LOWERCASE", return_type="STRING",
-            params_info=[Symbol(name="s", sym_type="STRING", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="abs", sym_type="ANY", kind="function", address_or_offset="BUILTIN_ABS", return_type="ANY", # Type determined at call site
-            params_info=[Symbol(name="x", sym_type="ANY", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="sqr", sym_type="ANY", kind="function", address_or_offset="BUILTIN_SQR", return_type="ANY", # Type determined at call site
-            params_info=[Symbol(name="x", sym_type="ANY", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="sqrt", sym_type="REAL", kind="function", address_or_offset="BUILTIN_SQRT", return_type="REAL",
-            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="pred", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_PRED", return_type="INTEGER",
-            params_info=[Symbol(name="x", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="succ", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_SUCC", return_type="INTEGER",
-            params_info=[Symbol(name="x", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="ord", sym_type="INTEGER", kind="function", address_or_offset="BUILTIN_ORD", return_type="INTEGER",
-            params_info=[Symbol(name="c", sym_type="ANY", kind="parameter", address_or_offset=0)] # CHAR or STRING[1]
-        ))
-        self.current_scope.define(Symbol(
-            name="chr", sym_type="CHAR", kind="function", address_or_offset="BUILTIN_CHR", return_type="CHAR", # VM might treat CHAR as INT
-            params_info=[Symbol(name="i", sym_type="INTEGER", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="sin", sym_type="REAL", kind="function", address_or_offset="BUILTIN_SIN", return_type="REAL",
-            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
-        ))
-        self.current_scope.define(Symbol(
-            name="cos", sym_type="REAL", kind="function", address_or_offset="BUILTIN_COS", return_type="REAL",
-            params_info=[Symbol(name="x", sym_type="REAL", kind="parameter", address_or_offset=0)]
-        ))
+        # Register built-in functions in the initial global scope
+        register_builtin_functions(self.current_scope)
 
         # Switch to the main global scope after built-ins
         self.current_scope = SymbolTable(parent=self.current_scope, scope_name="global")
-
 
     def new_label(self, prefix="L"):
         self.label_count += 1
         return f"{prefix}{self.label_count - 1}"
 
+    # Generates a new temporary variable offset
     def new_temp_var_offset(self):
         offset = self.current_scope.get_local_var_offset()
         self.emit(f"PUSHI 0", f"Allocate temp var at FP+{offset}")
         return offset
 
+    # Emits a VM instruction with an optional comment
     def emit(self, instruction, comment=None):
         indent = "    " 
         if comment:
@@ -86,27 +33,32 @@ class CodeGenerator:
         else:
             self.code.append(f"{indent}{instruction}")
 
+    # Emits a label for jumps
     def emit_label(self, label):
         self.code.append(f"{label}:")
 
+    # Pushes a new scope onto the stack
     def push_scope(self, scope_name="local"):
         new_scope = SymbolTable(parent=self.current_scope, scope_name=scope_name)
         self.current_scope = new_scope
 
+    # Pops the current scope, returning to the parent scope
     def pop_scope(self):
         if self.current_scope.parent:
             # Ensure we don't pop past the main global scope established after builtins
-            if self.current_scope.parent.scope_name == "global_init_phase": 
-                 pass # effectively at main global, parent is the init_phase sentinel
+            if self.current_scope.parent.scope_name == "global_init_phase":
+                pass  # effectively at main global, parent is the init_phase sentinel
             else:
                 self.current_scope = self.current_scope.parent
         else:
             print("Warning: Popping global scope (should not happen).")
 
+    # Generates the VM code for the entire AST
     def generate(self, node):
         self.visit(node)
         return self.code
 
+    # Visitor pattern to traverse the AST
     def visit(self, node):
         if node is None:
             return
@@ -114,6 +66,7 @@ class CodeGenerator:
         visitor = getattr(self, method_name, self.generic_visit)
         return visitor(node)
 
+    # Generic visitor method for nodes without a specific visit method
     def generic_visit(self, node):
         print(f"Warning: No visitor method for {type(node).__name__}")
         if hasattr(node, '__dict__'):
@@ -121,81 +74,94 @@ class CodeGenerator:
                 if isinstance(value, list):
                     for item in value:
                         if hasattr(item, '__class__'): # Basic check for AST nodes
-                             self.visit(item)
+                            self.visit(item)
                 elif hasattr(value, '__class__'): # Basic check for AST nodes
                     self.visit(value)
 
+    def process_array_type(self, var_type):
+        """Extract array information from a type node."""
+        is_array_type = False
+        array_size = 1
+        lower_bound = 0
+        
+        if isinstance(var_type, ast_nodes.ArrayType):
+            start_node = var_type.index_range[0]
+            end_node = var_type.index_range[1]
+            
+            # Ensure both start and end are integer literals
+            if isinstance(start_node, ast_nodes.Literal) and isinstance(end_node, ast_nodes.Literal) and \
+                isinstance(start_node.value, int) and isinstance(end_node.value, int):
+
+                low = start_node.value
+                high = end_node.value
+                if high < low:
+                    raise ValueError(f"Array upper bound {high} less than lower bound {low}")
+                array_size = high - low + 1
+                lower_bound = low
+                is_array_type = True
+            else:
+                raise TypeError("Array bounds must be integer literals.")
+        
+        return is_array_type, array_size, lower_bound
 
     def visit_Program(self, node):
         # Phase 1: Define global symbols and emit PUSHI 0 for global variables BEFORE START.
-        # This assumes START or a convention uses these stack values for GP initialization.
+
         if node.block and node.block.declarations:
+            # Handle global variable declarations before START
             for decl in node.block.declarations:
+
+                # Check if the declaration is a VariableDeclaration
                 if isinstance(decl, ast_nodes.VariableDeclaration):
+
                     # Process each variable in the declaration list
                     for var_info in decl.variable_list:
                         var_type_str = str(var_info.var_type) # This might be complex type object
                         
-                        # Determine if it's an array and its properties
-                        is_array_type = False
-                        array_size = 1
-                        lower_bound = 0 # Default
+                        is_array_type, array_size, lower_bound = self.process_array_type(var_info.var_type)
                         
-                        if isinstance(var_info.var_type, ast_nodes.ArrayType):
-                            # Assuming ArrayType has index_range with start and end Literal nodes
-                            # This requires your parser (anasin.py for p_type) to create ArrayType correctly.
-                            # Example: type_node.index_range = (Literal(1), Literal(5))
-                            start_node = var_info.var_type.index_range[0]
-                            end_node = var_info.var_type.index_range[1]
-                            if isinstance(start_node, ast_nodes.Literal) and isinstance(end_node, ast_nodes.Literal) and \
-                               isinstance(start_node.value, int) and isinstance(end_node.value, int):
-                                low = start_node.value
-                                high = end_node.value
-                                if high < low:
-                                    raise ValueError(f"Array upper bound {high} less than lower bound {low} for {var_info.id_list}")
-                                array_size = high - low + 1
-                                lower_bound = low
-                                is_array_type = True
-                            else:
-                                raise TypeError(f"Array bounds for {var_info.id_list} must be integer literals.")
-                        
+                        # Now process each variable ID in the declaration
                         for var_id_str in var_info.id_list:
-                            offset = self.current_scope.get_local_var_offset(count=array_size) # For GP offsets
+
+                            offset = self.current_scope.get_local_var_offset(count=array_size)
                             sym = Symbol(var_id_str, var_type_str, 'variable', offset, scope_level=0,
-                                         is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
-                                         array_element_count=array_size if is_array_type else None)
+                                        is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
+                                        array_element_count=array_size if is_array_type else None)
                             self.current_scope.define(sym)
                             self.globals_handled_pre_start.add(var_id_str)
 
+                            # Emit code to initialize global variables
                             if is_array_type:
                                 self.emit(f"PUSHN {array_size}", f"Reserve space for global array '{var_id_str}' (gp[{offset}..])")
                             else:
                                 self.emit(f"PUSHI 0", f"Initial stack value for global '{var_id_str}' (gp[{offset}])")
         
+        # Emit START instruction
         self.emit("START", "Initialize Frame Pointer = Stack Pointer")
         
         # Phase 2: Process the rest of the block (constants, functions, main compound statement)
-        self.visit(node.block) # visit_Block will now skip pre-handled globals
+        self.visit(node.block)
         
         self.emit("STOP", "End of program")
 
     def visit_ProgramHeader(self, node):
         pass
 
+    # ────────  Blocks ─────────────────────────────────────────────
     def visit_Block(self, node):
         function_procedure_nodes = []
         declarations_for_this_block_pass = []
 
+        # Handle declarations in the block
         if node.declarations:
             for decl in node.declarations:
+
+                # Handle function/procedure declarations separately
                 if isinstance(decl, (ast_nodes.FunctionDeclaration, ast_nodes.ProcedureDeclaration)):
                     function_procedure_nodes.append(decl)
-                elif isinstance(decl, ast_nodes.VariableDeclaration):
-                    # Only add if *not* handled pre-START. This check is tricky because
-                    # a VariableDeclaration node can declare multiple variables.
-                    # The actual filtering will happen in visit_VariableDeclaration using the set.
-                    declarations_for_this_block_pass.append(decl)
-                else: # Constants, Types etc.
+                else:
+                    # All other declarations (Variables, Constants, Types, etc.)
+                    # The actual filtering for variables will happen in visit_VariableDeclaration using self.globals_handled_pre_start
                     declarations_for_this_block_pass.append(decl)
         
         # Process declarations not handled pre-START (e.g., constants)
@@ -203,43 +169,36 @@ class CodeGenerator:
             self.visit(decl_node) # This calls visit_VariableDeclaration, visit_ConstantDeclaration etc.
 
         main_code_label = None
+        # If there are function/procedure declarations, we need to jump over them
         if function_procedure_nodes:
             main_code_label = self.new_label("mainLabel")
             self.emit(f"JUMP {main_code_label}", "Jump over nested function/proc definitions")
 
+        # Now visit all function/procedure declarations
         for fp_node in function_procedure_nodes:
             self.visit(fp_node)
 
+        # If we have a main code label, emit it now
         if main_code_label:
             self.emit_label(main_code_label)
         
+        # Finally, visit the main compound statement of the block
         if node.compound_statement:
             self.visit(node.compound_statement)
 
+    # ────────  Declarations ──────────────────────────────────────
     def visit_VariableDeclaration(self, node):
         for var_info in node.variable_list:
-            var_type_str = str(var_info.var_type) # Potentially complex type object
 
-            is_array_type = False
-            array_size = 1
-            lower_bound = 0
+            # Make type as a string for simplicity
+            var_type_str = str(var_info.var_type)
+            
+            is_array_type, array_size, lower_bound = self.process_array_type(var_info.var_type)
 
-            if isinstance(var_info.var_type, ast_nodes.ArrayType):
-                start_node = var_info.var_type.index_range[0]
-                end_node = var_info.var_type.index_range[1]
-                if isinstance(start_node, ast_nodes.Literal) and isinstance(end_node, ast_nodes.Literal) and \
-                   isinstance(start_node.value, int) and isinstance(end_node.value, int):
-                    low = start_node.value
-                    high = end_node.value
-                    if high < low:
-                        raise ValueError(f"Array upper bound {high} less than lower bound {low} for {var_info.id_list}")
-                    array_size = high - low + 1
-                    lower_bound = low
-                    is_array_type = True
-                else:
-                    raise TypeError(f"Array bounds for {var_info.id_list} must be integer literals for local variables.")
-
+            # Now process each variable ID in the declaration
             for var_id_str in var_info.id_list:
+
+                # Check if this variable was already handled pre-START
                 if var_id_str in self.globals_handled_pre_start:
                     continue 
 
@@ -249,8 +208,8 @@ class CodeGenerator:
                     sym_check = self.current_scope.resolve(var_id_str)
                     if not sym_check:
                         sym = Symbol(var_id_str, var_type_str, 'variable', offset, scope_level=0,
-                                     is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
-                                     array_element_count=array_size if is_array_type else None)
+                                    is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
+                                    array_element_count=array_size if is_array_type else None)
                         self.current_scope.define(sym)
                     
                     if is_array_type:
@@ -898,10 +857,11 @@ class CodeGenerator:
 
             elif builtin_name == "BUILTIN_LENGTH":
                 arg = check_args(1, func_name_original)
-                # Constant folding for length
+                # Folding lenght in case string is constant - Ex : Length('Pascal')
                 if isinstance(arg, ast_nodes.Literal) and isinstance(arg.value, str):
                     self.emit(f"PUSHI {len(arg.value)}", f"Folded Length('{arg.value}')")
                     return
+                # For string variables - Ex : Length(myString)
                 self.visit(arg) # Pushes string address
                 self.emit("STRLEN", f"VM STRLEN for {func_name_original}")
                 return
@@ -1169,12 +1129,4 @@ class CodeGenerator:
 
 
 if __name__ == '__main__':
-    #
-    # Suppose you parse “HelloWorld” into an AST called “program_node.”
-    #
-    # generator = CodeGenerator()
-    # vm_code = generator.generate(program_node)
-    # for instr in vm_code:
-    #     print(instr)
-    #
     pass

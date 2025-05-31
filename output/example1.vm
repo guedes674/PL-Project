@@ -1,0 +1,5 @@
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Ola, Mundo!"
+    WRITES
+    WRITELN
+    STOP // End of program

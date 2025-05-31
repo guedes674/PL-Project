@@ -1,0 +1,55 @@
+    PUSHI 0 // Initial stack value for global 'num1' (gp[0])
+    PUSHI 0 // Initial stack value for global 'num2' (gp[1])
+    PUSHI 0 // Initial stack value for global 'num3' (gp[2])
+    PUSHI 0 // Initial stack value for global 'maior' (gp[3])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Introduza o primeiro número: "
+    WRITES
+    READ // Read string from input for 'num1'
+    ATOI // Convert to integer for 'num1'
+    STOREG 0 // Store to global 'num1'
+    PUSHS "Introduza o segundo número: "
+    WRITES
+    READ // Read string from input for 'num2'
+    ATOI // Convert to integer for 'num2'
+    STOREG 1 // Store to global 'num2'
+    PUSHS "Introduza o terceiro número: "
+    WRITES
+    READ // Read string from input for 'num3'
+    ATOI // Convert to integer for 'num3'
+    STOREG 2 // Store to global 'num3'
+    PUSHG 0 // Push global 'num1'
+    PUSHG 1 // Push global 'num2'
+    SUP
+    JZ else0 // If condition is false, jump to else
+    PUSHG 0 // Push global 'num1'
+    PUSHG 2 // Push global 'num3'
+    SUP
+    JZ else2 // If condition is false, jump to else
+    PUSHG 0 // Push global 'num1'
+    STOREG 3 // Store to global variable 'maior'
+    JUMP endif3 // Skip else block
+else2:
+    PUSHG 2 // Push global 'num3'
+    STOREG 3 // Store to global variable 'maior'
+endif3:
+    JUMP endif1 // Skip else block
+else0:
+    PUSHG 1 // Push global 'num2'
+    PUSHG 2 // Push global 'num3'
+    SUP
+    JZ else4 // If condition is false, jump to else
+    PUSHG 1 // Push global 'num2'
+    STOREG 3 // Store to global variable 'maior'
+    JUMP endif5 // Skip else block
+else4:
+    PUSHG 2 // Push global 'num3'
+    STOREG 3 // Store to global variable 'maior'
+endif5:
+endif1:
+    PUSHS "O maior é: "
+    WRITES
+    PUSHG 3 // Push global 'maior'
+    WRITEI
+    WRITELN
+    STOP // End of program

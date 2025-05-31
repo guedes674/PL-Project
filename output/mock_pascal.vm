@@ -1,0 +1,33 @@
+    PUSHI 0 // Initial stack value for global 'sum' (gp[0])
+    PUSHI 0 // Initial stack value for global 'product' (gp[1])
+    PUSHI 0 // Initial stack value for global 'square' (gp[2])
+    PUSHI 0 // Initial stack value for global 'lengthOfWord' (gp[3])
+    PUSHI 0 // Initial stack value for global 'len2' (gp[4])
+    PUSHI 0 // Initial stack value for global 'upper' (gp[5])
+    PUSHI 0 // Initial stack value for global 'lower' (gp[6])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Hello, Pascal!"
+    WRITES
+    WRITELN
+    PUSHI 2
+    PUSHI 3
+    ADD
+    STOREG 0 // Store to global variable 'sum'
+    PUSHI 4
+    PUSHI 5
+    MUL
+    STOREG 1 // Store to global variable 'product'
+    PUSHI 6
+    PUSHI 6
+    MUL
+    STOREG 2 // Store to global variable 'square'
+    PUSHI 6 // Folded Length('Pascal')
+    STOREG 3 // Store to global variable 'lengthOfWord'
+    PUSHS "HELLO" // Folded UpperCase('hello')
+    STOREG 5 // Store to global variable 'upper'
+    PUSHS "world" // Folded LowerCase('WORLD')
+    STOREG 6 // Store to global variable 'lower'
+    PUSHG 5 // Push global 'upper'
+    STRLEN // VM STRLEN for Length
+    STOREG 4 // Store to global variable 'len2'
+    STOP // End of program

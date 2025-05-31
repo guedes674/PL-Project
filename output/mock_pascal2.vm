@@ -1,0 +1,35 @@
+    PUSHI 0 // Initial stack value for global 'num1' (gp[0])
+    PUSHI 0 // Initial stack value for global 'num2' (gp[1])
+    PUSHI 0 // Initial stack value for global 'result' (gp[2])
+    START // Initialize Frame Pointer = Stack Pointer
+    JUMP mainLabel0 // Jump over nested function/proc definitions
+funcSum1:
+    // Param 'b' at FP-1
+    // Param 'a' at FP-2
+    PUSHL -2 // Push value of param 'a'
+    PUSHL -1 // Push value of param 'b'
+    ADD
+    // Assignment to function name 'Sum', value on TOS for return
+    RETURN // Return from function Sum
+mainLabel0:
+    PUSHS "Enter first number: "
+    WRITES
+    READ // Read string from input for 'num1'
+    ATOI // Convert to integer for 'num1'
+    STOREG 0 // Store to global 'num1'
+    PUSHS "Enter second number: "
+    WRITES
+    READ // Read string from input for 'num2'
+    ATOI // Convert to integer for 'num2'
+    STOREG 1 // Store to global 'num2'
+    PUSHG 0 // Push global 'num1'
+    PUSHG 1 // Push global 'num2'
+    PUSHA funcSum1 // Push address of Sum
+    CALL
+    STOREG 2 // Store to global variable 'result'
+    PUSHS "The sum is: "
+    WRITES
+    PUSHG 2 // Push global 'result'
+    WRITEI
+    WRITELN
+    STOP // End of program

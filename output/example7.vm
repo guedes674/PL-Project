@@ -1,0 +1,65 @@
+    PUSHI 0 // Initial stack value for global 'bin' (gp[0])
+    PUSHI 0 // Initial stack value for global 'valor' (gp[1])
+    START // Initialize Frame Pointer = Stack Pointer
+    JUMP mainLabel0 // Jump over nested function/proc definitions
+funcBinToInt1:
+    // Param 'bin' at FP-1
+    PUSHI 0 // Allocate space for local var 'i' at FP+0
+    PUSHI 0 // Allocate space for local var 'potencia' at FP+1
+    PUSHI 0
+    STOREG 1 // Store to global variable 'valor'
+    PUSHI 1
+    STOREL 1 // Store to local/value_param 'potencia'
+    PUSHI 0 // Allocate temp var at FP+2
+    PUSHI 1
+    STOREL 2 // Store evaluated end value of FOR loop for 'i'
+    PUSHL -1 // Push value of param 'bin'
+    STRLEN // VM STRLEN for length
+    STOREL 0 // Initialize FOR local control var 'i'
+forcheck2:
+    PUSHL 0 // Load local control var 'i' for check
+    PUSHL 2 // Load stored end value for check
+    SUPEQ // Check i >= end_value
+    JZ forend3 // If not (i >= end_value), exit loop
+    PUSHL -1 // Push local string 'bin'
+    PUSHL 0 // Push local 'i'
+    PUSHI 1 // Adjust for 1-based string indexing in Pascal
+    SUB // Convert to 0-based for VM
+    CHARAT // Get character at index from string
+    PUSHI 49 // ASCII code for '1' (49)
+    EQUAL // Compare character codes
+    JZ endif5 // If condition is false (no else), jump to endif
+    PUSHG 1 // Push global 'valor'
+    PUSHL 1 // Push local 'potencia'
+    ADD
+    STOREG 1 // Store to global variable 'valor'
+endif5:
+    PUSHL 1 // Push local 'potencia'
+    PUSHI 2
+    MUL
+    STOREL 1 // Store to local/value_param 'potencia'
+    PUSHL 0 // Load local control var 'i' for update
+    PUSHI 1
+    SUB // Decrement i
+    STOREL 0 // Store updated local control var 'i'
+    JUMP forcheck2
+forend3:
+    PUSHG 1 // Push global 'valor'
+    // Assignment to function name 'BinToInt', value on TOS for return
+    RETURN // Return from function BinToInt
+mainLabel0:
+    PUSHS "Introduza uma string binária:"
+    WRITES
+    WRITELN
+    READ // Read string from input for 'bin'
+    STOREG 0 // Store to global 'bin'
+    PUSHG 0 // Push global 'bin'
+    PUSHA funcBinToInt1 // Push address of BinToInt
+    CALL
+    STOREG 1 // Store to global variable 'valor'
+    PUSHS "O valor inteiro correspondente é: "
+    WRITES
+    PUSHG 1 // Push global 'valor'
+    WRITEI
+    WRITELN
+    STOP // End of program

@@ -1,0 +1,42 @@
+    PUSHI 0 // Initial stack value for global 'n' (gp[0])
+    PUSHI 0 // Initial stack value for global 'i' (gp[1])
+    PUSHI 0 // Initial stack value for global 'fat' (gp[2])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHS "Introduza um número inteiro positivo:"
+    WRITES
+    WRITELN
+    READ // Read string from input for 'n'
+    ATOI // Convert to integer for 'n'
+    STOREG 0 // Store to global 'n'
+    PUSHI 1
+    STOREG 2 // Store to global variable 'fat'
+    PUSHI 0 // Allocate temp var at FP+3
+    PUSHG 0 // Push global 'n'
+    STOREL 3 // Store evaluated end value of FOR loop for 'i'
+    PUSHI 1
+    STOREG 1 // Initialize FOR global control var 'i'
+forcheck0:
+    PUSHG 1 // Load global control var 'i' for check
+    PUSHL 3 // Load stored end value for check
+    INFEQ // Check i <= end_value
+    JZ forend1 // If not (i <= end_value), exit loop
+    PUSHG 2 // Push global 'fat'
+    PUSHG 1 // Push global 'i'
+    MUL
+    STOREG 2 // Store to global variable 'fat'
+    PUSHG 1 // Load global control var 'i' for update
+    PUSHI 1
+    ADD // Increment i
+    STOREG 1 // Store updated global control var 'i'
+    JUMP forcheck0
+forend1:
+    PUSHS "Fatorial de "
+    WRITES
+    PUSHG 0 // Push global 'n'
+    WRITEI
+    PUSHS ": "
+    WRITES
+    PUSHG 2 // Push global 'fat'
+    WRITEI
+    WRITELN
+    STOP // End of program
