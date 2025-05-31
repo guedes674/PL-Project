@@ -1,0 +1,50 @@
+    PUSHN 5 // Reserve space for global array 'numeros' (gp[0..])
+    PUSHI 0 // Initial stack value for global 'i' (gp[5])
+    PUSHI 0 // Initial stack value for global 'soma' (gp[6])
+    START // Initialize Frame Pointer = Stack Pointer
+    PUSHI 0
+    STOREG 6 // Store to global variable 'soma'
+    PUSHS "Introduza 5 números inteiros:"
+    WRITES
+    WRITELN
+    PUSHI 0 // Allocate temp var at FP+7
+    PUSHI 5
+    STOREL 7 // Store evaluated end value of FOR loop for 'i'
+    PUSHI 1
+    STOREG 5 // Initialize FOR global control var 'i'
+forcheck0:
+    PUSHG 5 // Load global control var 'i' for check
+    PUSHL 7 // Load stored end value for check
+    INFEQ // Check i <= end_value
+    JZ forend1 // If not (i <= end_value), exit loop
+    PUSHGP // Push GP for global array 'numeros' base
+    PUSHI 0 // Offset of global array 'numeros'
+    PADD // Calculate base address of global array 'numeros'
+    PUSHG 5 // Push global 'i'
+    PUSHI 1 // Push array lower bound 1
+    SUB // Adjust index to be 0-based for VM
+    READ // Read string from input for numeros[index]
+    ATOI // Convert to integer for numeros[index]
+    STOREN // Store read value into numeros[index]
+    PUSHG 6 // Push global 'soma'
+    PUSHGP // Push GP for global array 'numeros' base address
+    PUSHI 0 // Offset of global array 'numeros'
+    PADD // Calculate base address of global array 'numeros'
+    PUSHG 5 // Push global 'i'
+    PUSHI 1 // Push array lower bound 1
+    SUB // Adjust index to be 0-based for VM
+    LOADN // Load value from array element
+    ADD
+    STOREG 6 // Store to global variable 'soma'
+    PUSHG 5 // Load global control var 'i' for update
+    PUSHI 1
+    ADD // Increment i
+    STOREG 5 // Store updated global control var 'i'
+    JUMP forcheck0
+forend1:
+    PUSHS "A soma dos números é: "
+    WRITES
+    PUSHG 6 // Push global 'soma'
+    WRITEI
+    WRITELN
+    STOP // End of program

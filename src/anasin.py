@@ -111,11 +111,28 @@ def p_type(p):
             | ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type
             | RECORD field_list END'''
     if len(p) == 2: # simple type, for example: INTEGER, REAL, BOOLEAN, etc.
-        p[0] = p[1]
-    elif len(p) == 10: # only for array type, for example: ARRAY [1..10] OF INTEGER
-        p[0] = ('array_type', (p[3], p[6]), p[9])
+        p[0] = p[1] # p[1] is the string token value, e.g., "INTEGER"
+    elif len(p) == 10: # ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type
+        # p[3] is the value of the lower bound NUMBER token (e.g., 1)
+        # p[6] is the value of the upper bound NUMBER token (e.g., 5)
+        # p[9] is the element type (e.g., the string "INTEGER" from a recursive call to p_type)
+        
+        # Create Literal AST nodes for the bounds
+        lower_bound_literal = Literal(p[3]) # Assumes p[3] is the numeric value
+        upper_bound_literal = Literal(p[6]) # Assumes p[6] is the numeric value
+        
+        element_type_val = p[9] # This will be a string like "INTEGER"
+        
+        # Create an ArrayType AST node
+        # This assumes you have an ast_nodes.ArrayType class defined, e.g.:
+        # class ArrayType(Type):
+        #     def __init__(self, index_range, element_type):
+        #         self.index_range = index_range  # tuple of (Literal_lower, Literal_upper)
+        #         self.element_type = element_type # string like "INTEGER"
+        p[0] = ArrayType(index_range=(lower_bound_literal, upper_bound_literal), element_type=element_type_val)
     elif len(p) == 4: # only for RECORD type, for example: RECORD field_list END
-        p[0] = ('record_type', p[2])
+        # Assuming you might want a RecordType AST node here too eventually
+        p[0] = ('record_type', p[2]) # Placeholder, consider creating ast_nodes.RecordType
 
 # rule for a field_list
 def p_field_list(p):

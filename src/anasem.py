@@ -12,7 +12,8 @@ class Symbol:
                  is_var_param=False,                # true if it is a VAR‐parameter slot
                  is_array=False,                    # true if it is an array
                  array_lower_bound=None,            # lower bound of the array (if it is an array)
-                 array_element_count=None):         # number of elements in the array (if it is an array)
+                 array_element_count=None,          # number of elements in the array (if it is an array)
+                 element_type=None):                # Add element_type parameter
         self.name = name
         self.sym_type = sym_type
         self.kind = kind
@@ -24,6 +25,10 @@ class Symbol:
         self.is_array = is_array
         self.array_lower_bound = array_lower_bound
         self.array_element_count = array_element_count
+        self.element_type = element_type            # Store element_type
+
+    def __str__(self):
+        return f"Symbol(name={self.name}, sym_type={self.sym_type}, kind={self.kind}, address_or_offset={self.address_or_offset}, scope_level={self.scope_level}, params_info={self.params_info}, return_type={self.return_type}, is_var_param={self.is_var_param}, is_array={self.is_array}, array_lower_bound={self.array_lower_bound}, array_element_count={self.array_element_count}, element_type={self.element_type})"
 
 class SymbolTable:
     def __init__(self, parent=None, scope_name="global"):

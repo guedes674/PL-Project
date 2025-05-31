@@ -78,20 +78,19 @@ class CodeGenerator:
                 elif hasattr(value, '__class__'): # Basic check for AST nodes
                     self.visit(value)
 
-    def process_array_type(self, var_type):
-        """Extract array information from a type node."""
+    def process_array_type(self, var_type_node): # var_type_node is now expected to be an AST node
         is_array_type = False
         array_size = 1
         lower_bound = 0
-        
-        if isinstance(var_type, ast_nodes.ArrayType):
-            start_node = var_type.index_range[0]
-            end_node = var_type.index_range[1]
-            
-            # Ensure both start and end are integer literals
-            if isinstance(start_node, ast_nodes.Literal) and isinstance(end_node, ast_nodes.Literal) and \
-                isinstance(start_node.value, int) and isinstance(end_node.value, int):
+        element_type_str = None # To store the element type string
 
+        if isinstance(var_type_node, ast_nodes.ArrayType):
+            start_node = var_type_node.index_range[0] # Should be a Literal node
+            end_node = var_type_node.index_range[1]   # Should be a Literal node
+            
+            if isinstance(start_node, ast_nodes.Literal) and isinstance(start_node.value, int) and \
+               isinstance(end_node, ast_nodes.Literal) and isinstance(end_node.value, int):
+                
                 low = start_node.value
                 high = end_node.value
                 if high < low:
@@ -99,10 +98,47 @@ class CodeGenerator:
                 array_size = high - low + 1
                 lower_bound = low
                 is_array_type = True
+                
+                # Extract element type (assuming it's stored as a string in ArrayType)
+                if isinstance(var_type_node.element_type, str):
+                    element_type_str = var_type_node.element_type.upper()
+                # Add more sophisticated handling if element_type can be other AST nodes
             else:
-                raise TypeError("Array bounds must be integer literals.")
+                raise TypeError("Array bounds in ast_nodes.ArrayType must be integer literals.")
+        # You can remove the `elif isinstance(var_type_node, str):` block 
+        # if anasin.py now reliably produces ArrayType nodes.
         
-        return is_array_type, array_size, lower_bound
+        return is_array_type, array_size, lower_bound, element_type_str # Return element_type_str
+
+    def type_node_to_string(self, var_type_node):
+        """
+        Helper function to convert a variable type AST node or string to a string representation.
+        This is useful for symbol creation where we need a clear type string.
+        """
+        if isinstance(var_type_node, ast_nodes.ArrayType):
+            # For array types, we might want to show the element type and bounds
+            is_array, size, low_b, elem_type = self.process_array_type(var_type_node)
+            if is_array and elem_type: # Ensure elem_type is not None
+                return f"ARRAY OF {elem_type.upper()}" 
+            elif is_array:
+                return "ARRAY OF UNKNOWN_ELEMENT_TYPE" # Fallback if element type couldn't be determined
+        elif isinstance(var_type_node, str): # Handle scalar types passed as strings
+            return var_type_node.upper() # e.g., "INTEGER", "REAL"
+        # Add more cases as needed for other complex type nodes if you introduce them
+        # e.g., elif isinstance(var_type_node, ast_nodes.RecordType):
+        #          return "RECORD" 
+
+        # Fallback if it's an AST node type not handled above or an unexpected type
+        if hasattr(var_type_node, '__class__'):
+            # Attempt to get a string representation if it's some other AST node
+            # This might need refinement based on your other AST node types
+            type_name_guess = str(var_type_node) 
+            # Avoid overly long or complex default strings from __repr__
+            if len(type_name_guess) > 30: # Arbitrary length limit
+                 return f"COMPLEX_TYPE_{var_type_node.__class__.__name__.upper()}"
+            return type_name_guess.upper()
+
+        return "UNKNOWN_TYPE"
 
     def visit_Program(self, node):
         # Phase 1: Define global symbols and emit PUSHI 0 for global variables BEFORE START.
@@ -116,17 +152,24 @@ class CodeGenerator:
 
                     # Process each variable in the declaration list
                     for var_info in decl.variable_list:
-                        var_type_str = str(var_info.var_type) # This might be complex type object
+                        # Use type_node_to_string for a consistent sym_type string
+                        var_type_for_symbol_str = self.type_node_to_string(var_info.var_type) 
                         
-                        is_array_type, array_size, lower_bound = self.process_array_type(var_info.var_type)
+                        is_array_type, array_size, lower_bound, actual_element_type_str = self.process_array_type(var_info.var_type)
                         
                         # Now process each variable ID in the declaration
                         for var_id_str in var_info.id_list:
 
                             offset = self.current_scope.get_local_var_offset(count=array_size)
-                            sym = Symbol(var_id_str, var_type_str, 'variable', offset, scope_level=0,
-                                        is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
-                                        array_element_count=array_size if is_array_type else None)
+                            sym = Symbol(var_id_str, 
+                                         var_type_for_symbol_str, # Use consistent type string
+                                         'variable', 
+                                         offset, 
+                                         scope_level=0,
+                                         is_array=is_array_type, 
+                                         array_lower_bound=lower_bound if is_array_type else None,
+                                         array_element_count=array_size if is_array_type else None,
+                                         element_type=actual_element_type_str if is_array_type else None) # Pass element_type
                             self.current_scope.define(sym)
                             self.globals_handled_pre_start.add(var_id_str)
 
@@ -190,10 +233,10 @@ class CodeGenerator:
     def visit_VariableDeclaration(self, node):
         for var_info in node.variable_list:
 
-            # Make type as a string for simplicity
-            var_type_str = str(var_info.var_type)
+            # Use type_node_to_string for a consistent sym_type string
+            var_type_for_symbol_str = self.type_node_to_string(var_info.var_type)
             
-            is_array_type, array_size, lower_bound = self.process_array_type(var_info.var_type)
+            is_array_type, array_size, lower_bound, actual_element_type_str = self.process_array_type(var_info.var_type)
 
             # Now process each variable ID in the declaration
             for var_id_str in var_info.id_list:
@@ -207,9 +250,15 @@ class CodeGenerator:
                     offset = self.current_scope.get_local_var_offset(count=array_size)
                     sym_check = self.current_scope.resolve(var_id_str)
                     if not sym_check:
-                        sym = Symbol(var_id_str, var_type_str, 'variable', offset, scope_level=0,
-                                    is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
-                                    array_element_count=array_size if is_array_type else None)
+                        sym = Symbol(var_id_str, 
+                                     var_type_for_symbol_str, 
+                                     'variable', 
+                                     offset, 
+                                     scope_level=0,
+                                     is_array=is_array_type, 
+                                     array_lower_bound=lower_bound if is_array_type else None,
+                                     array_element_count=array_size if is_array_type else None,
+                                     element_type=actual_element_type_str if is_array_type else None) # Pass element_type
                         self.current_scope.define(sym)
                     
                     if is_array_type:
@@ -226,9 +275,15 @@ class CodeGenerator:
                         self.emit(f"STOREG {offset}", f"Initialize global '{var_id_str}' to 0")
                 else: # Local variable (inside function/procedure)
                     offset = self.current_scope.get_local_var_offset(count=array_size)
-                    sym = Symbol(var_id_str, var_type_str, 'variable', offset, scope_level=1,
-                                 is_array=is_array_type, array_lower_bound=lower_bound if is_array_type else None,
-                                 array_element_count=array_size if is_array_type else None)
+                    sym = Symbol(var_id_str, 
+                                 var_type_for_symbol_str, 
+                                 'variable', 
+                                 offset, 
+                                 scope_level=1, # Corrected scope_level for local vars
+                                 is_array=is_array_type, 
+                                 array_lower_bound=lower_bound if is_array_type else None,
+                                 array_element_count=array_size if is_array_type else None,
+                                 element_type=actual_element_type_str if is_array_type else None) # Pass element_type
                     self.current_scope.define(sym)
                     if is_array_type:
                         self.emit(f"PUSHN {array_size}", f"Allocate {array_size} slots for local array '{var_id_str}' at FP+{offset}")
@@ -1046,37 +1101,107 @@ class CodeGenerator:
             if op == "writeln":
                 self.emit("WRITELN")
 
-        elif op in ["read", "readln"]: # Assuming readln behaves like read for listed vars
+        elif op in ["read", "readln"]:
             for arg_var_node in node.arguments:
-                if not isinstance(arg_var_node, ast_nodes.Identifier):
-                    raise ValueError(f"Argument to {op} must be a variable identifier.")
-                var_name = arg_var_node.name
-                sym = self.current_scope.resolve(var_name)
-                if not sym:
-                    raise ValueError(f"Undefined variable '{var_name}' in {op}.")
+                if isinstance(arg_var_node, ast_nodes.Identifier):
+                    var_name = arg_var_node.name
+                    sym = self.current_scope.resolve(var_name)
+                    if not sym:
+                        raise ValueError(f"Undefined variable '{var_name}' in {op}.")
 
-                self.emit("READ", f"Read string from input for '{var_name}'") # Pushes string address
+                    self.emit("READ", f"Read string from input for '{var_name}'") # Pushes string address
 
-                target_var_type = sym.sym_type.upper() if sym.sym_type else 'UNKNOWN'
-                if target_var_type == 'INTEGER':
-                    self.emit("ATOI", f"Convert to integer for '{var_name}'")
-                elif target_var_type == 'REAL':
-                    self.emit("ATOF", f"Convert to real for '{var_name}'")
-                elif target_var_type == 'STRING':
-                    pass # String address from READ is already on stack, ready for storing
-                else: # Default or error
-                    self.emit("ATOI", f"Convert to integer (default for unknown type {target_var_type}) for '{var_name}'")
+                    target_var_type = sym.sym_type.upper() if sym.sym_type else 'UNKNOWN'
+                    if target_var_type == 'INTEGER':
+                        self.emit("ATOI", f"Convert to integer for '{var_name}'")
+                    elif target_var_type == 'REAL':
+                        self.emit("ATOF", f"Convert to real for '{var_name}'")
+                    elif target_var_type == 'STRING':
+                        pass # String address from READ is already on stack, ready for storing
+                    else: # Default or error
+                        self.emit("ATOI", f"Convert to integer (default for unknown type {target_var_type}) for '{var_name}'")
+                    
+                    # Value to store is now on TOS.
+                    if sym.is_var_param:
+                        self.emit(f"PUSHL {sym.address_or_offset}", f"Load address from VAR param '{var_name}'")
+                        self.emit("SWAP") 
+                        self.emit("STORE 0", f"Store into VAR param '{var_name}'")
+                    elif sym.scope_level == 0: # Global
+                        self.emit(f"STOREG {sym.address_or_offset}", f"Store to global '{var_name}'")
+                    else: # Local
+                        self.emit(f"STOREL {sym.address_or_offset}", f"Store to local '{var_name}'")
+
+                elif isinstance(arg_var_node, ast_nodes.ArrayAccess):
+                    array_ast_node = arg_var_node.array # This should be an Identifier node
+                    index_ast_node = arg_var_node.index
+
+                    if not isinstance(array_ast_node, ast_nodes.Identifier):
+                        raise NotImplementedError(f"Reading into a non-identifier array base in {op} is not implemented.")
+                    
+                    array_name = array_ast_node.name
+                    sym_array = self.current_scope.resolve(array_name)
+
+                    if not sym_array or not sym_array.is_array:
+                        raise ValueError(f"'{array_name}' is not a defined array for {op}.")
+
+                    # 1. Calculate base address of the array and push it onto the stack
+                    if sym_array.scope_level == 0: # Global array
+                        self.emit("PUSHGP", f"Push GP for global array '{array_name}' base")
+                        self.emit(f"PUSHI {sym_array.address_or_offset}", f"Offset of global array '{array_name}'")
+                        self.emit("PADD", f"Calculate base address of global array '{array_name}'")
+                    else: # Local array or VAR parameter array
+                        if sym_array.is_var_param: # VAR parameter that is an array
+                             self.emit(f"PUSHL {sym_array.address_or_offset}", f"Push address from VAR param array '{array_name}'")
+                        else: # Regular local array
+                            self.emit("PUSHFP", f"Push FP for local array '{array_name}' base")
+                            self.emit(f"PUSHI {sym_array.address_or_offset}", f"Offset of local array '{array_name}'")
+                            self.emit("PADD", f"Calculate base address of local array '{array_name}'")
+                    # Stack: [..., base_address]
+
+                    # 2. Evaluate the index expression and adjust it to be 0-based
+                    self.visit(index_ast_node) # Stack: [..., base_address, user_provided_index]
+                    if sym_array.array_lower_bound is not None and sym_array.array_lower_bound != 0:
+                        self.emit(f"PUSHI {sym_array.array_lower_bound}", f"Push array lower bound {sym_array.array_lower_bound}")
+                        self.emit("SUB", "Adjust index to be 0-based for VM")
+                    # Stack: [..., base_address, adjusted_0_based_index]
+
+                    # 3. Perform the read operation (VM's READ pushes string_address)
+                    self.emit("READ", f"Read string from input for {array_name}[index]")
+                    # Stack: [..., base_address, adjusted_index, string_address_from_read]
+                    
+                    # 4. Convert the read string to the array's element type
+                    element_type_str = 'UNKNOWN'
+                    # Attempt to get element_type from the symbol. This relies on anasem.py setting it.
+                    if hasattr(sym_array, 'element_type') and sym_array.element_type:
+                        element_type_str = str(sym_array.element_type).upper()
+                    elif sym_array.sym_type: # Fallback: try to parse from sym_type if it's like "ARRAY OF INTEGER"
+                        st = sym_array.sym_type.upper()
+                        if st.startswith("ARRAY") and " OF " in st:
+                           element_type_str = st.split(" OF ")[-1].strip()
+                        # else: assume sym_type might be the element type directly (less robust)
+                        #    element_type_str = st 
+                    
+                    if element_type_str == 'UNKNOWN':
+                         # If element_type is crucial and not found, it's better to error.
+                         raise ValueError(f"Cannot determine element type for array '{array_name}' for {op}. Ensure 'element_type' is set in its symbol.")
+
+                    if element_type_str == 'INTEGER':
+                        self.emit("ATOI", f"Convert to integer for {array_name}[index]")
+                    elif element_type_str == 'REAL':
+                        self.emit("ATOF", f"Convert to real for {array_name}[index]")
+                    elif element_type_str == 'STRING':
+                        # Assuming STOREN can handle storing a string address if the array is of strings
+                        pass 
+                    else:
+                        # Defaulting to ATOI might be risky, consider raising an error for unsupported element types
+                        self.emit("ATOI", f"Convert to integer (default for unknown element type {element_type_str}) for {array_name}[index]")
+                    # Stack: [..., base_address, adjusted_index, converted_value_to_store]
+
+                    # 5. Emit STOREN to store the converted value into the array element
+                    self.emit("STOREN", f"Store read value into {array_name}[index]")
                 
-                # Value to store is now on TOS.
-                if sym.is_var_param:
-                    # Stack: [..., value_from_read]
-                    self.emit(f"PUSHL {sym.address_or_offset}", f"Load address from VAR param '{var_name}'") # Stack: [..., value_from_read, address_var_points_to]
-                    self.emit("SWAP") # Stack: [..., address_var_points_to, value_from_read]
-                    self.emit("STORE 0", f"Store into VAR param '{var_name}'")
-                elif sym.scope_level == 0: # Global
-                    self.emit(f"STOREG {sym.address_or_offset}", f"Store to global '{var_name}'")
-                else: # Local
-                    self.emit(f"STOREL {sym.address_or_offset}", f"Store to local '{var_name}'")
+                else:
+                    raise ValueError(f"Argument to {op} must be a variable identifier or an array element. Got {type(arg_var_node).__name__}.")
             # Note: If 'readln' needs to consume the rest of the input line after variables,
             # and 'READ' doesn't do that, a separate VM instruction or convention is needed.
             # The VM doc only lists 'READ'.
@@ -1119,9 +1244,3 @@ class CodeGenerator:
             return 'INTEGER' # Or 'UNKNOWN'
         
         return 'UNKNOWN'
-
-# ────────────────────────────────────────────────────────────────────────────────
-
-
-if __name__ == '__main__':
-    pass
