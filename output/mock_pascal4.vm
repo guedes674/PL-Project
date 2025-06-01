@@ -17,7 +17,6 @@ mainLabel0:
     WRITELN
     READ // Read string input for 'nomeUsuario'
     STOREG 0 // Store to global 'nomeUsuario'
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 0 // Push global 'nomeUsuario'
     PUSHA procMostrarSaudacao1 // Push address of MostrarSaudacao
     CALL

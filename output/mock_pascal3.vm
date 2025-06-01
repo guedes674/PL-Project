@@ -25,8 +25,7 @@ forcheck2:
     JZ forend3 // If not (j <= end_value), exit loop
     PUSHL -1 // Push address from VAR param 'S'
     LOAD 0 // Dereference scalar VAR param 'S' to get its value
-    PUSHL -3 // Push address from VAR param 'A'
-    LOAD 0 // Dereference scalar VAR param 'A' to get its value
+    PUSHL -3 // Push value of param 'A'
     PUSHL 0 // Push local 'j'
     LOADN // Load value from array element
     ADD
@@ -46,7 +45,6 @@ mainLabel0:
     READ // Read string input for 'n'
     ATOI
     STOREG 50 // Store to global 'n'
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 50 // Push global 'n'
     PUSHI 1
     INF
@@ -85,16 +83,15 @@ forcheck6:
     READ // Read string input for arr[index]
     ATOI
     STOREN // Store read value into arr[index]
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 51 // Load global control var 'i' for update
     PUSHI 1
     ADD // Increment i
     STOREG 51 // Store updated global control var 'i'
     JUMP forcheck6
 forend7:
-    PUSHGP // Push global base for VAR param
-    PUSHI 0 // Offset of global var 'arr'
-    PADD // Compute address of global var 'arr'
+    PUSHGP // Push GP for global array 'arr' base address
+    PUSHI 0 // Offset of global array 'arr'
+    PADD // Calculate base address of global array 'arr'
     PUSHG 50 // Push global 'n'
     PUSHGP // Push global base for VAR param
     PUSHI 52 // Offset of global var 'total'

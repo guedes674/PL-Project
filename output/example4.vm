@@ -8,7 +8,6 @@
     READ // Read string input for 'num'
     ATOI
     STOREG 0 // Store to global 'num'
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHI 1
     STOREG 2 // Store to global variable 'primo'
     PUSHI 2

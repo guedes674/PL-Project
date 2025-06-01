@@ -17,13 +17,11 @@ mainLabel0:
     READ // Read string input for 'num1'
     ATOI
     STOREG 0 // Store to global 'num1'
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHS "Enter second number: "
     WRITES
     READ // Read string input for 'num2'
     ATOI
     STOREG 1 // Store to global 'num2'
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 0 // Push global 'num1'
     PUSHG 1 // Push global 'num2'
     PUSHA funcSum1 // Push address of Sum

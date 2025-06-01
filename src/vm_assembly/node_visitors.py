@@ -791,8 +791,3 @@ def visit_IOCall(node):
                 ctx.emit("STOREN", f"Store read value into {array_name}[index]")
             else:
                 raise ValueError(f"Argument to {op} must be an identifier or array element. Got {type(arg_var_node).__name__}.")
-        
-        # If 'readln', consume rest of line. VM might do this with READ, or need separate instruction.
-        # Assuming READ consumes the item and stops. If READLN needs to clear buffer, that's VM specific.
-        if op == "readln":
-            ctx.emit("// READLN might require additional VM op to consume rest of line if READ doesn't", "")

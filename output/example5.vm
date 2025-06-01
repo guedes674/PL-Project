@@ -26,7 +26,6 @@ forcheck0:
     READ // Read string input for numeros[index]
     ATOI
     STOREN // Store read value into numeros[index]
-    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 6 // Push global 'soma'
     PUSHGP // Push GP for global array 'numeros' base address
     PUSHI 0 // Offset of global array 'numeros'

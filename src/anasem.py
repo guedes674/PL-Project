@@ -193,7 +193,7 @@ def semantic_check(node, symbol_table):
             )
 
         if declared_lhs_type is None: # if we could not determine the type of the LHS variable
-             raise Exception(f"{line_info_var_lhs}Could not determine type for LHS variable '{var_name_original}'.")
+            raise Exception(f"{line_info_var_lhs}Could not determine type for LHS variable '{var_name_original}'.")
 
         lhs_type_for_comparison = declared_lhs_type.upper()
 
@@ -202,7 +202,7 @@ def semantic_check(node, symbol_table):
         rhs_type = get_expression_type(node.expression, symbol_table)
         
         compatible = (lhs_type_for_comparison == rhs_type) or \
-                     (lhs_type_for_comparison == "REAL" and rhs_type == "INTEGER") # allow INTEGER to be assigned to REAL
+                    (lhs_type_for_comparison == "REAL" and rhs_type == "INTEGER") # allow INTEGER to be assigned to REAL
 
         if not compatible: # if the types are not compatible
             raise Exception(
@@ -303,11 +303,6 @@ def semantic_check(node, symbol_table):
         semantic_check(node.condition, symbol_table) # check the condition of the while statement
         semantic_check(node.statement, symbol_table) # check the statement inside the while loop
 
-    elif isinstance(node, RepeatStatement): # for repeat statement node
-        for stmt in node.statement_list: # check each statement in the repeat statement
-            semantic_check(stmt, symbol_table) # check the statement inside the repeat
-        semantic_check(node.condition, symbol_table) # check the condition of the repeat statement
-
     elif isinstance(node, ForStatement): # for for statement node
         check_identifier_exists(node.control_variable, symbol_table) # check if the control variable exists
         semantic_check(node.start_expression, symbol_table) # check the start expression of the for loop
@@ -341,7 +336,7 @@ def get_expression_type(node, symbol_table):
         
         if symbol.kind in ['variable', 'parameter', 'constant']: # these can be used as values in expressions
             if symbol.sym_type is None: # if the symbol has no type information
-                 raise Exception(f"{line_info}Identifier '{node.name}' has no type information.")
+                raise Exception(f"{line_info}Identifier '{node.name}' has no type information.")
             return symbol.sym_type.upper()
         else: # if the symbol is not a variable, parameter, or constant
             raise Exception(f"{line_info}Identifier '{node.name}' of kind '{symbol.kind}' cannot be used as a value in an expression.")
@@ -356,7 +351,7 @@ def get_expression_type(node, symbol_table):
             raise Exception(f"{line_info}Procedure '{node.name}' does not return a value and cannot be used in an expression.")
         elif symbol.kind == 'function': # if it's a function, check its return type
             if symbol.return_type is None:
-                 raise Exception(f"{line_info}Function '{node.name}' does not have a defined return type.")
+                raise Exception(f"{line_info}Function '{node.name}' does not have a defined return type.")
             return symbol.return_type.upper()
         else: # if it's not a function or procedure
             raise Exception(f"{line_info}'{node.name}' is not a function or procedure.")
@@ -386,8 +381,8 @@ def get_expression_type(node, symbol_table):
 
         elif op in ['=', '<>', '<', '<=', '>', '>=']: # comparison operators
             if (left_type in ["INTEGER", "REAL"] and right_type in ["INTEGER", "REAL"]) or \
-               (left_type == "STRING" and right_type == "STRING") or \
-               (left_type == "BOOLEAN" and right_type == "BOOLEAN"): # valid comparison types
+                (left_type == "STRING" and right_type == "STRING") or \
+                (left_type == "BOOLEAN" and right_type == "BOOLEAN"): # valid comparison types
                 return "BOOLEAN"
             else: # if the types are not compatible for comparison
                 raise Exception(f"{line_info}Cannot compare types '{left_type}' and '{right_type}' with operator '{node.operator}'.")
@@ -427,7 +422,7 @@ def get_expression_type(node, symbol_table):
         if not array_symbol or not array_symbol.is_array: # if the array symbol is not found or not an array
             raise Exception(f"{line_info}Identifier '{node.array.name}' is not an array or not declared.")
         if not array_symbol.element_type: # if the array does not have a defined element type
-             raise Exception(f"{line_info}Array '{node.array.name}' does not have a defined element type.")
+            raise Exception(f"{line_info}Array '{node.array.name}' does not have a defined element type.")
         index_type = get_expression_type(node.index, symbol_table)
         if index_type != "INTEGER": # the index must be an INTEGER
             raise Exception(f"{line_info}Array index for '{node.array.name}' must be an INTEGER, got {index_type}.")

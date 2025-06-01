@@ -20,7 +20,7 @@ var
     Count: Integer — número de elementos válidos em A (de 1 a 50).
     var S: Integer — variável onde a soma será armazenada.
 --------------------------------------------------------------------------}
-procedure ComputeSum(var A: array[1..50] of Integer; Count: Integer; var S: Integer);
+procedure ComputeSum(A: array[1..50] of Integer; Count: Integer; var S: Integer);
 var
   j: Integer;
 begin
