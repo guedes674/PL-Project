@@ -2,7 +2,7 @@ import os
 import sys # Import sys for path manipulation if needed, though os.path should suffice
 from anasin import parse_program
 from anasem import semantic_check, SymbolTable
-from vm_generator import CodeGenerator
+from vm_generator import generate
 
 # Get the directory where main.py is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -68,8 +68,7 @@ def compile_pascal_file(file_path):
 
     print("Generating VM code...")
     try:
-        generator = CodeGenerator()
-        vm_code = generator.generate(ast)
+        vm_code = generate(ast)
 
         output_vm_filepath = get_output_filepath(file_path)
         print(f"\n--- Generated VM Code for {os.path.basename(file_path)} ---")
