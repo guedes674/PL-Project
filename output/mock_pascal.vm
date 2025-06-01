@@ -3,8 +3,7 @@
     PUSHI 0 // Initial stack value for global 'square' (gp[2])
     PUSHI 0 // Initial stack value for global 'lengthOfWord' (gp[3])
     PUSHI 0 // Initial stack value for global 'len2' (gp[4])
-    PUSHI 0 // Initial stack value for global 'upper' (gp[5])
-    PUSHI 0 // Initial stack value for global 'lower' (gp[6])
+    PUSHI 0 // Initial stack value for global 'palavra' (gp[5])
     START // Initialize Frame Pointer = Stack Pointer
     PUSHS "Hello, Pascal!"
     WRITES
@@ -21,15 +20,35 @@
     PUSHI 6
     MUL
     STOREG 2 // Store to global variable 'square'
+    PUSHI 6
+    STOREG 2 // Store to global variable 'square'
+    PUSHG 2 // Push global 'square'
+    DUP 1
+    MUL
+    STOREG 2 // Store to global variable 'square'
+    PUSHI 6
+    PUSHI 0
+    SWAP
+    SUB // Integer negation
+    STOREG 2 // Store to global variable 'square'
+    PUSHI 6
+    PUSHI 0
+    SWAP
+    SUB // Integer negation
+    DUP 1 // ABS - Check if is negative
+    PUSHI 0
+    INF
+    JZ absEnd0 // If not (val < 0), jump to end
+    PUSHI 0 // Making negative
+    SWAP
+    SUB
+absEnd0:
+    STOREG 2 // Store to global variable 'square'
     PUSHI 6 // Folded Length('Pascal')
     STOREG 3 // Store to global variable 'lengthOfWord'
-    // Builtin BUILTIN_UPPERCASE call not fully implemented in generator
     PUSHS "hello"
-    STOREG 5 // Store to global variable 'upper'
-    // Builtin BUILTIN_LOWERCASE call not fully implemented in generator
-    PUSHS "WORLD"
-    STOREG 6 // Store to global variable 'lower'
-    PUSHG 5 // Push global 'upper'
+    STOREG 5 // Store to global variable 'palavra'
+    PUSHG 5 // Push global 'palavra'
     STRLEN // VM STRLEN for Length
     STOREG 4 // Store to global variable 'len2'
     STOP // End of program

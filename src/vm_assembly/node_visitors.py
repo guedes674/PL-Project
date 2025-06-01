@@ -172,10 +172,8 @@ def visit_FunctionDeclaration(node):
                 visit(decl) # This will emit PUSHN/PUSHI for locals
     if node.block:
         visit(node.block.compound_statement) # Visit the function body
-    # Ensure a return path if not explicitly returned, especially for functions that should return a value
-    # For now, relying on explicit return or letting VM handle it.
-    # If function has a non-VOID return type, and no explicit return for function name assignment,
-    # it might be an issue. Pascal often uses assignment to function name for return.
+
+    # Handle return value 
     ctx.emit("RETURN", f"Return from function {node.name}")
     ctx.pop_scope()
 
@@ -405,7 +403,7 @@ def visit_Identifier(node):
             if not sym.is_array:
                 ctx.emit(f"LOAD 0", f"Dereference scalar VAR param '{var_name}' to get its value")
         else: # Value parameter
-            if sym.is_array: # Value parameter that is an array (copied)
+            if sym.is_array: # Value parameter that is an array
                 # Push the base address of the copied array on the stack frame
                 ctx.emit("PUSHFP", f"Push FP for value param array '{var_name}' base address")
                 ctx.emit(f"PUSHI {sym.address_or_offset}", f"Offset of value param array '{var_name}'")
@@ -457,9 +455,6 @@ def visit_ArrayAccess(node):
         if isinstance(node.array, ast_nodes.Identifier): # Get symbol to check lower_bound
             sym_array = ctx.current_scope.resolve(node.array.name)
         
-        # If sym_array is a VAR param, its .is_array, .array_lower_bound might not be directly set.
-        # This needs careful handling in symbol table / type system for VAR params that are arrays.
-        # For now, assume sym_array (if resolved) has the necessary info.
         if sym_array and sym_array.is_array and sym_array.array_lower_bound is not None and sym_array.array_lower_bound != 0:
             ctx.emit(f"PUSHI {sym_array.array_lower_bound}", f"Push array lower bound {sym_array.array_lower_bound}")
             ctx.emit("SUB", "Adjust index to be 0-based for VM")
@@ -478,7 +473,6 @@ def visit_UnaryOperation(node):
         # Check type of operand to decide if FNEG or integer negation
         operand_type = th.determine_expression_type(node.operand)
         if operand_type == 'REAL':
-            # Assuming FNEG exists or use PUSHF 0.0, SWAP, FSUB
             ctx.emit("PUSHF 0.0")
             ctx.emit("SWAP")
             ctx.emit("FSUB", "Floating point negation")
@@ -508,7 +502,7 @@ def visit_BinaryOperation(node):
                 ctx.emit(f"PUSHI {char_code}", f"ASCII for char literal '{node.right.value}'")
                 
                 ctx.emit("EQUAL", "Compare character ASCII codes")
-                return # Handled
+                return 
 
     visit(node.left)
     visit(node.right)
@@ -561,7 +555,7 @@ def visit_BinaryOperation(node):
     elif op == '=':
         # String equality check (if not char comparison handled above)
         if left_expr_type == 'STRING' and right_expr_type == 'STRING':
-            ctx.emit("EQUAL", "String comparison (EQUAL assumes addresses or specific VM support)") # Or STRCMP if available
+            ctx.emit("EQUAL", "String comparison")
         else:
             ctx.emit("FEQUAL" if is_float_comparison else "EQUAL")
     elif op == '<': ctx.emit("FINF" if is_float_comparison else "INF")
@@ -621,21 +615,20 @@ def visit_FunctionCall(node):
             else:
                 visit(arg); ctx.emit("STRLEN", f"VM STRLEN for {func_name_original}")
             return
-        # Add other builtins like UPPERCASE, LOWERCASE, ABS, SQR, SQRT, PRED, SUCC here
-        # Example for ABS:
+        # ABS
         elif builtin_name == "BUILTIN_ABS":
             arg_node = check_args(1, func_name_original)
             visit(arg_node) # Value on stack
             arg_type = th.determine_expression_type(arg_node)
-            abs_end_label = ctx.new_label("abs_end")
+            abs_end_label = ctx.new_label("absEnd")
             if arg_type == "INTEGER":
-                ctx.emit("DUP 0"); ctx.emit("PUSHI 0"); ctx.emit("INF") # val, (val < 0)
-                ctx.emit(f"JZ {abs_end_label}") # If not (val < 0), jump to end
-                ctx.emit("PUSHI 0"); ctx.emit("SWAP"); ctx.emit("SUB") # Negate
+                ctx.emit("DUP 1","ABS - Check if is negative"); ctx.emit("PUSHI 0"); ctx.emit("INF") # val, (val < 0)
+                ctx.emit(f"JZ {abs_end_label}" , "If not (val < 0), jump to end") # If not (val < 0), jump to end
+                ctx.emit("PUSHI 0","Making negative"); ctx.emit("SWAP"); ctx.emit("SUB") # Negate
             elif arg_type == "REAL":
-                ctx.emit("DUP 0"); ctx.emit("PUSHF 0.0"); ctx.emit("FINF")
-                ctx.emit(f"JZ {abs_end_label}")
-                ctx.emit("PUSHF 0.0"); ctx.emit("SWAP"); ctx.emit("FSUB")
+                ctx.emit("DUP 1","ABS - Check if is negative"); ctx.emit("PUSHF 0.0"); ctx.emit("FINF")
+                ctx.emit(f"JZ {abs_end_label}" , "If not (val < 0), jump to end")
+                ctx.emit("PUSHF 0.0","Making negative"); ctx.emit("SWAP"); ctx.emit("FSUB")
             else: raise TypeError(f"Unsupported type {arg_type} for ABS.")
             ctx.emit_label(abs_end_label)
             return
@@ -644,22 +637,10 @@ def visit_FunctionCall(node):
             arg_node = check_args(1, func_name_original)
             visit(arg_node)
             arg_type = th.determine_expression_type(arg_node)
-            ctx.emit("DUP 0")
+            ctx.emit("DUP 1")
             if arg_type == "INTEGER": ctx.emit("MUL")
             elif arg_type == "REAL": ctx.emit("FMUL")
             else: raise TypeError(f"Unsupported type {arg_type} for SQR.")
-            return
-        # PRED
-        elif builtin_name == "BUILTIN_PRED":
-            arg_node = check_args(1, func_name_original)
-            visit(arg_node) # Pushes integer or char (ASCII)
-            ctx.emit("PUSHI 1"); ctx.emit("SUB")
-            return
-        # SUCC
-        elif builtin_name == "BUILTIN_SUCC":
-            arg_node = check_args(1, func_name_original)
-            visit(arg_node) # Pushes integer or char (ASCII)
-            ctx.emit("PUSHI 1"); ctx.emit("ADD")
             return
         else:
             ctx.emit(f"// Builtin {builtin_name} call not fully implemented in generator", "")
@@ -778,7 +759,6 @@ def visit_IOCall(node):
                 element_type = 'UNKNOWN'
                 if hasattr(sym_array, 'element_type') and sym_array.element_type:
                     element_type = str(sym_array.element_type).upper()
-                # Add more robust element type detection if needed from sym_array.sym_type ("ARRAY OF ...")
 
                 if element_type == 'INTEGER': ctx.emit("ATOI")
                 elif element_type == 'REAL': ctx.emit("ATOF")

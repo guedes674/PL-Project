@@ -1,111 +1,23 @@
-    PUSHN 50 // Reserve space for global array 'arr' (gp[0..])
-    PUSHI 0 // Initial stack value for global 'n' (gp[50])
-    PUSHI 0 // Initial stack value for global 'i' (gp[51])
-    PUSHI 0 // Initial stack value for global 'total' (gp[52])
+    PUSHI 0 // Initial stack value for global 'nomeUsuario' (gp[0])
     START // Initialize Frame Pointer = Stack Pointer
     JUMP mainLabel0 // Jump over nested function/proc definitions
-procComputeSum1:
-    // Param 'S' at FP-1
-    // Param 'Count' at FP-2
-    // Param 'A' at FP-3
-    PUSHI 0 // Allocate space for local var 'j' at FP+0
-    PUSHI 0
-    PUSHL -1 // Load address from VAR param 'S'
-    SWAP
-    STORE 0 // Store value into address pointed by VAR param 'S'
-    PUSHI 0 // Allocate temp var at FP+1
-    PUSHL -2 // Push value of param 'Count'
-    STOREL 1 // Store evaluated end value of FOR loop for 'j'
-    PUSHI 1
-    STOREL 0 // Initialize FOR local control var 'j'
-forcheck2:
-    PUSHL 0 // Load local control var 'j' for check
-    PUSHL 1 // Load stored end value for check
-    INFEQ // Check j <= end_value
-    JZ forend3 // If not (j <= end_value), exit loop
-    PUSHL -1 // Push address from VAR param 'S'
-    LOAD 0 // Dereference scalar VAR param 'S' to get its value
-    PUSHL -3 // Push value of param 'A'
-    PUSHL 0 // Push local 'j'
-    LOADN // Load value from array element
-    ADD
-    PUSHL -1 // Load address from VAR param 'S'
-    SWAP
-    STORE 0 // Store value into address pointed by VAR param 'S'
-    PUSHL 0 // Load local control var 'j' for update
-    PUSHI 1
-    ADD // Increment j
-    STOREL 0 // Store updated local control var 'j'
-    JUMP forcheck2
-forend3:
-    RETURN // Return from procedure ComputeSum
+procMostrarSaudacao1:
+    // Param 'nome' at FP-1
+    PUSHS "Olá, "
+    WRITES
+    PUSHL -1 // Push value of param 'nome'
+    WRITES
+    PUSHS "! Seja bem-vindo ao programa em Pascal."
+    WRITES
+    WRITELN
+    RETURN // Return from procedure MostrarSaudacao
 mainLabel0:
-    PUSHS "Quantos números deseja somar (1..50)? "
-    WRITES
-    READ // Read string input for 'n'
-    ATOI
-    STOREG 50 // Store to global 'n'
-    PUSHG 50 // Push global 'n'
-    PUSHI 1
-    INF
-    PUSHG 50 // Push global 'n'
-    PUSHI 50
-    SUP
-    OR
-    JZ else4 // If condition is false, jump to else
-    PUSHS "Número inválido. O programa será encerrado."
+    PUSHS "Digite seu nome:"
     WRITES
     WRITELN
-    JUMP endif5 // Skip else block
-else4:
-    PUSHI 0 // Allocate temp var at FP+53
-    PUSHG 50 // Push global 'n'
-    STOREL 53 // Store evaluated end value of FOR loop for 'i'
-    PUSHI 1
-    STOREG 51 // Initialize FOR global control var 'i'
-forcheck6:
-    PUSHG 51 // Load global control var 'i' for check
-    PUSHL 53 // Load stored end value for check
-    INFEQ // Check i <= end_value
-    JZ forend7 // If not (i <= end_value), exit loop
-    PUSHS "Número "
-    WRITES
-    PUSHG 51 // Push global 'i'
-    WRITEI
-    PUSHS ": "
-    WRITES
-    PUSHGP
-    PUSHI 0
-    PADD
-    PUSHG 51 // Push global 'i'
-    PUSHI 1
-    SUB
-    READ // Read string input for arr[index]
-    ATOI
-    STOREN // Store read value into arr[index]
-    PUSHG 51 // Load global control var 'i' for update
-    PUSHI 1
-    ADD // Increment i
-    STOREG 51 // Store updated global control var 'i'
-    JUMP forcheck6
-forend7:
-    PUSHGP // Push GP for global array 'arr' base address
-    PUSHI 0 // Offset of global array 'arr'
-    PADD // Calculate base address of global array 'arr'
-    PUSHG 50 // Push global 'n'
-    PUSHGP // Push global base for VAR param
-    PUSHI 52 // Offset of global var 'total'
-    PADD // Compute address of global var 'total'
-    PUSHA procComputeSum1 // Push address of ComputeSum
+    READ // Read string input for 'nomeUsuario'
+    STOREG 0 // Store to global 'nomeUsuario'
+    PUSHG 0 // Push global 'nomeUsuario'
+    PUSHA procMostrarSaudacao1 // Push address of MostrarSaudacao
     CALL
-    PUSHS "A soma dos "
-    WRITES
-    PUSHG 50 // Push global 'n'
-    WRITEI
-    PUSHS " valores é: "
-    WRITES
-    PUSHG 52 // Push global 'total'
-    WRITEI
-    WRITELN
-endif5:
     STOP // End of program

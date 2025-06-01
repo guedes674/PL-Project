@@ -1,7 +1,6 @@
 class ASTNode:
-    def __init__(self, lineno=None): # Add lineno attribute
+    def __init__(self, lineno=None):
         self.lineno = lineno
-        # ... other common attributes ...
 
 class FunctionDeclaration(ASTNode):
     def __init__(self, name, parameter_list, return_type=None, block=None, lineno=None):
@@ -88,44 +87,6 @@ class Variable(ASTNode):
     def __repr__(self):
         return f"Variable(ids={self.id_list}, type={self.var_type})"
 
-class ConstantDeclaration(ASTNode):
-    def __init__(self, constant_list, lineno=None):
-        """Represents a constant declaration section."""
-        super().__init__(lineno)
-        self.constant_list = constant_list
-
-    def __repr__(self):
-        return f"ConstantDeclaration(constants={self.constant_list})"
-
-class Constant(ASTNode):
-    def __init__(self, name, value, lineno=None):
-        """Represents a single constant definition."""
-        super().__init__(lineno)
-        self.name = name
-        self.value = value
-
-    def __repr__(self):
-        return f"Constant(name={self.name}, value={self.value})"
-
-class TypeDeclaration(ASTNode):
-    def __init__(self, type_list, lineno=None):
-        """Represents a type declaration section."""
-        super().__init__(lineno)
-        self.type_list = type_list
-
-    def __repr__(self):
-        return f"TypeDeclaration(types={self.type_list})"
-
-class TypeDefinition(ASTNode):
-    def __init__(self, name, type_spec, lineno=None):
-        """Represents a single type definition."""
-        super().__init__(lineno)
-        self.name = name
-        self.type_spec = type_spec
-
-    def __repr__(self):
-        return f"TypeDefinition(name={self.name}, type={self.type_spec})"
-
 class ArrayType(ASTNode):
     def __init__(self, index_range, element_type, lineno=None):
         """Represents an array type."""
@@ -135,25 +96,6 @@ class ArrayType(ASTNode):
 
     def __repr__(self):
         return f"ArrayType(range={self.index_range}, element_type={self.element_type})"
-
-class RecordType(ASTNode):
-    def __init__(self, field_list, lineno=None):
-        """Represents a record type."""
-        super().__init__(lineno)
-        self.field_list = field_list
-
-    def __repr__(self):
-        return f"RecordType(fields={self.field_list})"
-
-class Field(ASTNode):
-    def __init__(self, id_list, field_type, lineno=None):
-        """Represents a field in a record."""
-        super().__init__(lineno)
-        self.id_list = id_list
-        self.field_type = field_type
-
-    def __repr__(self):
-        return f"Field(ids={self.id_list}, type={self.field_type})"
 
 class Parameter(ASTNode):
     def __init__(self, id_list, param_type, is_var=False, lineno=None):
@@ -206,16 +148,6 @@ class WhileStatement(ASTNode):
     def __repr__(self):
         return f"WhileStatement(condition={self.condition}, statement={self.statement})"
 
-class RepeatStatement(ASTNode):
-    def __init__(self, statement_list, condition, lineno=None):
-        """Represents a repeat-until loop."""
-        super().__init__(lineno)
-        self.statement_list = statement_list
-        self.condition = condition
-
-    def __repr__(self):
-        return f"RepeatStatement(statements={self.statement_list}, until={self.condition})"
-
 class ForStatement(ASTNode):
     def __init__(self, control_variable, start_expression, end_expression, statement, downto=False, lineno=None):
         """Represents a for loop."""
@@ -228,26 +160,6 @@ class ForStatement(ASTNode):
 
     def __repr__(self):
         return f"ForStatement(var={self.control_variable}, start={self.start_expression}, end={self.end_expression}, downto={self.downto}, statement={self.statement})"
-
-class CaseStatement(ASTNode):
-    def __init__(self, expression, case_list, lineno=None):
-        """Represents a case statement."""
-        super().__init__(lineno)
-        self.expression = expression
-        self.case_list = case_list
-
-    def __repr__(self):
-        return f"CaseStatement(expr={self.expression}, cases={self.case_list})"
-
-class CaseElement(ASTNode):
-    def __init__(self, constant_list, statement, lineno=None):
-        """Represents a single case in a case statement."""
-        super().__init__(lineno)
-        self.constant_list = constant_list
-        self.statement = statement
-
-    def __repr__(self):
-        return f"CaseElement(constants={self.constant_list}, statement={self.statement})"
 
 class FunctionCall(ASTNode):
     def __init__(self, name, arguments=None, lineno=None):
@@ -317,13 +229,3 @@ class ArrayAccess(ASTNode):
 
     def __repr__(self):
         return f"ArrayAccess(array={self.array}, index={self.index})"
-
-class FieldAccess(ASTNode):
-    def __init__(self, record, field, lineno=None):
-        """Represents field access (record.field)."""
-        self.record = record
-        self.field = field
-        super().__init__(lineno)
-
-    def __repr__(self):
-        return f"FieldAccess(record={self.record}, field={self.field})"

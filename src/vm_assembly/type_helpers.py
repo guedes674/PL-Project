@@ -44,8 +44,8 @@ def type_node_to_string(var_type_node):
         return var_type_node.upper()
     
     if hasattr(var_type_node, '__class__'):
-        # Fallback for other AST node types (e.g. SimpleType)
-        if hasattr(var_type_node, 'name'): # e.g. SimpleType has a 'name' attribute
+        # Fallback for other AST node types 
+        if hasattr(var_type_node, 'name'): 
             return str(var_type_node.name).upper()
         type_name_guess = str(var_type_node)
         if len(type_name_guess) > 30:

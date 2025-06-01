@@ -49,7 +49,7 @@ def compile_pascal_file(file_path):
         print(f"No code to compile in {file_path}.")
         return
 
-    # MODIFIED: Call the correctly named reset function
+    # Reset the generator state before processing each file
     reset_and_initialize_generator_state()
 
     print("Parsing program...")
@@ -59,6 +59,7 @@ def compile_pascal_file(file_path):
         return
 
     print("AST generated successfully.")
+    print(ast)
     print("Performing semantic analysis...")
 
     try:

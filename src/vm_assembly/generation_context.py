@@ -1,4 +1,4 @@
-from anasem import SymbolTable # SymbolTable is used for type hinting current_scope
+from anasem import SymbolTable
 
 # --- Global-like state for code generation ---
 code = []  # List to hold generated VM code
@@ -52,8 +52,6 @@ def pop_scope():
         raise Exception("Cannot pop_scope: current_scope is not initialized.")
     if current_scope.parent:
         # Ensure we don't pop past the main global scope established after builtins
-        # This logic might need adjustment based on how SymbolTable parentage is set up
-        # For now, assume direct parent access is fine.
         if current_scope.parent.scope_name == "global_init_phase": # Special name for the pre-global scope
             # If the parent is the 'global_init_phase', it means the current scope is 'global'.
             # Popping 'global' should ideally not happen or be handled carefully.
