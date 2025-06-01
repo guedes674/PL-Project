@@ -23,11 +23,11 @@ forcheck2:
     JZ forend3 // If not (i >= end_value), exit loop
     PUSHL -1 // Push local string 'bin'
     PUSHL 0 // Push local 'i'
-    PUSHI 1 // Adjust for 1-based string indexing in Pascal
+    PUSHI 1 // Adjust for 1-based string indexing
     SUB // Convert to 0-based for VM
     CHARAT // Get character at index from string
-    PUSHI 49 // ASCII code for '1' (49)
-    EQUAL // Compare character codes
+    PUSHI 49 // ASCII for char literal '1'
+    EQUAL // Compare character ASCII codes
     JZ endif5 // If condition is false (no else), jump to endif
     PUSHG 1 // Push global 'valor'
     PUSHL 1 // Push local 'potencia'
@@ -51,8 +51,9 @@ mainLabel0:
     PUSHS "Introduza uma string binária:"
     WRITES
     WRITELN
-    READ // Read string from input for 'bin'
+    READ // Read string input for 'bin'
     STOREG 0 // Store to global 'bin'
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 0 // Push global 'bin'
     PUSHA funcBinToInt1 // Push address of BinToInt
     CALL

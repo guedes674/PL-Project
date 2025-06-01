@@ -23,9 +23,11 @@
     STOREG 2 // Store to global variable 'square'
     PUSHI 6 // Folded Length('Pascal')
     STOREG 3 // Store to global variable 'lengthOfWord'
-    PUSHS "HELLO" // Folded UpperCase('hello')
+    // Builtin BUILTIN_UPPERCASE call not fully implemented in generator
+    PUSHS "hello"
     STOREG 5 // Store to global variable 'upper'
-    PUSHS "world" // Folded LowerCase('WORLD')
+    // Builtin BUILTIN_LOWERCASE call not fully implemented in generator
+    PUSHS "WORLD"
     STOREG 6 // Store to global variable 'lower'
     PUSHG 5 // Push global 'upper'
     STRLEN // VM STRLEN for Length

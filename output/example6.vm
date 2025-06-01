@@ -6,8 +6,9 @@
     PUSHS "Introduza uma string binária:"
     WRITES
     WRITELN
-    READ // Read string from input for 'bin'
+    READ // Read string input for 'bin'
     STOREG 0 // Store to global 'bin'
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHI 0
     STOREG 2 // Store to global variable 'valor'
     PUSHI 1
@@ -25,11 +26,11 @@ forcheck0:
     JZ forend1 // If not (i >= end_value), exit loop
     PUSHG 0 // Push global string 'bin'
     PUSHG 1 // Push global 'i'
-    PUSHI 1 // Adjust for 1-based string indexing in Pascal
+    PUSHI 1 // Adjust for 1-based string indexing
     SUB // Convert to 0-based for VM
     CHARAT // Get character at index from string
-    PUSHI 49 // ASCII code for '1' (49)
-    EQUAL // Compare character codes
+    PUSHI 49 // ASCII for char literal '1'
+    EQUAL // Compare character ASCII codes
     JZ endif3 // If condition is false (no else), jump to endif
     PUSHG 2 // Push global 'valor'
     PUSHG 3 // Push global 'potencia'

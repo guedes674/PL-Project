@@ -5,9 +5,10 @@
     PUSHS "Introduza um número inteiro positivo:"
     WRITES
     WRITELN
-    READ // Read string from input for 'n'
-    ATOI // Convert to integer for 'n'
+    READ // Read string input for 'n'
+    ATOI
     STOREG 0 // Store to global 'n'
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHI 1
     STOREG 2 // Store to global variable 'fat'
     PUSHI 0 // Allocate temp var at FP+3

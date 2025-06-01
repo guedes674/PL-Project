@@ -2,7 +2,7 @@ import os
 import sys 
 from anasin import parse_program
 from anasem import semantic_check, SymbolTable
-from vm_generator import generate, reset_generator_state # MODIFIED: Import reset_generator_state
+from vm_assembly.generator import generate, reset_and_initialize_generator_state 
 
 # Get the directory where main.py is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -49,8 +49,8 @@ def compile_pascal_file(file_path):
         print(f"No code to compile in {file_path}.")
         return
 
-    # ADDED: Reset VM generator state before each compilation
-    reset_generator_state()
+    # MODIFIED: Call the correctly named reset function
+    reset_and_initialize_generator_state()
 
     print("Parsing program...")
     ast = parse_program(source_code)

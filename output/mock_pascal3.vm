@@ -41,9 +41,10 @@ forend3:
 mainLabel0:
     PUSHS "Quantos números deseja somar (1..50)? "
     WRITES
-    READ // Read string from input for 'n'
-    ATOI // Convert to integer for 'n'
+    READ // Read string input for 'n'
+    ATOI
     STOREG 50 // Store to global 'n'
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 50 // Push global 'n'
     PUSHI 1
     INF
@@ -73,26 +74,27 @@ forcheck6:
     WRITEI
     PUSHS ": "
     WRITES
-    PUSHGP // Push GP for global array 'arr' base
-    PUSHI 0 // Offset of global array 'arr'
-    PADD // Calculate base address of global array 'arr'
+    PUSHGP
+    PUSHI 0
+    PADD
     PUSHG 51 // Push global 'i'
-    PUSHI 1 // Push array lower bound 1
-    SUB // Adjust index to be 0-based for VM
-    READ // Read string from input for arr[index]
-    ATOI // Convert to integer for arr[index]
+    PUSHI 1
+    SUB
+    READ // Read string input for arr[index]
+    ATOI
     STOREN // Store read value into arr[index]
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 51 // Load global control var 'i' for update
     PUSHI 1
     ADD // Increment i
     STOREG 51 // Store updated global control var 'i'
     JUMP forcheck6
 forend7:
-    PUSHGP // Push global base
+    PUSHGP // Push global base for VAR param
     PUSHI 0 // Offset of global var 'arr'
     PADD // Compute address of global var 'arr'
     PUSHG 50 // Push global 'n'
-    PUSHGP // Push global base
+    PUSHGP // Push global base for VAR param
     PUSHI 52 // Offset of global var 'total'
     PADD // Compute address of global var 'total'
     PUSHA procComputeSum1 // Push address of ComputeSum

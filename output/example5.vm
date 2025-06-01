@@ -17,15 +17,16 @@ forcheck0:
     PUSHL 7 // Load stored end value for check
     INFEQ // Check i <= end_value
     JZ forend1 // If not (i <= end_value), exit loop
-    PUSHGP // Push GP for global array 'numeros' base
-    PUSHI 0 // Offset of global array 'numeros'
-    PADD // Calculate base address of global array 'numeros'
+    PUSHGP
+    PUSHI 0
+    PADD
     PUSHG 5 // Push global 'i'
-    PUSHI 1 // Push array lower bound 1
-    SUB // Adjust index to be 0-based for VM
-    READ // Read string from input for numeros[index]
-    ATOI // Convert to integer for numeros[index]
+    PUSHI 1
+    SUB
+    READ // Read string input for numeros[index]
+    ATOI
     STOREN // Store read value into numeros[index]
+    // READLN might require additional VM op to consume rest of line if READ doesn't
     PUSHG 6 // Push global 'soma'
     PUSHGP // Push GP for global array 'numeros' base address
     PUSHI 0 // Offset of global array 'numeros'
