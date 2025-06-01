@@ -15,17 +15,19 @@ register_builtin_functions(current_scope)
 current_scope = SymbolTable(parent=current_scope, scope_name="global")
 
 def new_label(prefix="L"):
+    global label_count
     label_count += 1
     return f"{prefix}{label_count - 1}"
 
 # Generates a new temporary variable offset
-def new_temp_var_offset(self):
+def new_temp_var_offset():
     offset = current_scope.get_local_var_offset()
     emit(f"PUSHI 0", f"Allocate temp var at FP+{offset}")
     return offset
 
 # Emits a VM instruction with an optional comment
 def emit(instruction, comment=None):
+    global code
     indent = "    " 
     if comment:
         code.append(f"{indent}{instruction} // {comment}")
@@ -34,15 +36,18 @@ def emit(instruction, comment=None):
 
 # Emits a label for jumps
 def emit_label(label):
+    global code
     code.append(f"{label}:")
 
 # Pushes a new scope onto the stack
 def push_scope(scope_name="local"):
+    global current_scope
     new_scope = SymbolTable(parent=current_scope, scope_name=scope_name)
     current_scope = new_scope
 
 # Pops the current scope, returning to the parent scope
-def pop_scope(self):
+def pop_scope():
+    global current_scope
     if current_scope.parent:
         # Ensure we don't pop past the main global scope established after builtins
         if current_scope.parent.scope_name == "global_init_phase":
@@ -54,16 +59,9 @@ def pop_scope(self):
 
 # Generates the VM code for the entire AST
 def generate(node):
+    global code
     visit(node)
     return code
-
-# Visitor pattern to traverse the AST
-def visit(node):
-    if node is None:
-        return
-    method_name = f'visit_{type(node).__name__}'
-    visitor = getattr(method_name, generic_visit)
-    return visitor(node)
 
 # Generic visitor method for nodes without a specific visit method
 def generic_visit(node):
@@ -76,6 +74,14 @@ def generic_visit(node):
                         visit(item)
             elif hasattr(value, '__class__'): # Basic check for AST nodes
                 visit(value)
+
+# Visitor pattern to traverse the AST
+def visit(node):
+    if node is None:
+        return
+    method_name = f'visit_{type(node).__name__}'
+    visitor = globals().get(method_name, generic_visit)
+    return visitor(node)
 
 def process_array_type(var_type_node): # var_type_node is now expected to be an AST node
     is_array_type = False
@@ -1190,3 +1196,16 @@ def determine_expression_type(expr_node):
         return 'INTEGER' # Or 'UNKNOWN'
     
     return 'UNKNOWN'
+
+def reset_generator_state():
+    global code, label_count, current_scope, temp_var_count, globals_handled_pre_start
+    
+    code.clear()
+    label_count = 0
+    temp_var_count = 0
+    globals_handled_pre_start.clear()
+    
+    # Re-initialize current_scope and register built-ins
+    current_scope = SymbolTable(scope_name="global_init_phase")
+    register_builtin_functions(current_scope) # Ensure this function is available
+    current_scope = SymbolTable(parent=current_scope, scope_name="global")

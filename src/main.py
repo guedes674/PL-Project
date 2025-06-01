@@ -1,8 +1,8 @@
 import os
-import sys # Import sys for path manipulation if needed, though os.path should suffice
+import sys 
 from anasin import parse_program
 from anasem import semantic_check, SymbolTable
-from vm_generator import generate
+from vm_generator import generate, reset_generator_state # MODIFIED: Import reset_generator_state
 
 # Get the directory where main.py is located
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -40,17 +40,20 @@ def compile_pascal_file(file_path):
     print(f"\n--- Compiling: {file_path} ---")
     try:
         with open(file_path, 'r') as f:
-            code = f.read()
+            source_code = f.read() # Renamed to avoid conflict with vm_generator.code
     except Exception as e:
         print(f"Error reading file {file_path}: {e}")
         return
 
-    if not code.strip():
+    if not source_code.strip():
         print(f"No code to compile in {file_path}.")
         return
 
+    # ADDED: Reset VM generator state before each compilation
+    reset_generator_state()
+
     print("Parsing program...")
-    ast = parse_program(code)
+    ast = parse_program(source_code)
     if not ast:
         print("Parsing failed.")
         return
@@ -59,8 +62,10 @@ def compile_pascal_file(file_path):
     print("Performing semantic analysis...")
 
     try:
-        global_scope = SymbolTable()
-        semantic_check(ast, global_scope)
+        # Note: semantic_check might also need its own state management if it uses globals
+        # For now, assuming semantic_check is stateless or manages its own state per call.
+        global_scope_for_semantic_check = SymbolTable() # Create a fresh scope for semantic analysis
+        semantic_check(ast, global_scope_for_semantic_check)
         print("Semantic check passed.")
     except Exception as e:
         print(f"Semantic error in {file_path}: {e}")
@@ -68,15 +73,15 @@ def compile_pascal_file(file_path):
 
     print("Generating VM code...")
     try:
-        vm_code = generate(ast)
+        vm_code_output = generate(ast) # Renamed to avoid potential confusion
 
         output_vm_filepath = get_output_filepath(file_path)
         print(f"\n--- Generated VM Code for {os.path.basename(file_path)} ---")
-        for instruction in vm_code:
+        for instruction in vm_code_output:
             print(instruction)
 
         with open(output_vm_filepath, 'w') as f:
-            for instruction in vm_code:
+            for instruction in vm_code_output:
                 f.write(instruction + "\n")
         print(f"\nVM code saved to {output_vm_filepath}")
     except Exception as e:
