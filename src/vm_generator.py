@@ -538,14 +538,6 @@ class CodeGenerator:
         self.emit(f"JUMP {loop_start_label}", "Repeat while loop")
         self.emit_label(loop_end_label)
 
-    def visit_RepeatStatement(self, node):
-        loop_start_label = self.new_label("repeatstart")
-        self.emit_label(loop_start_label)
-        for stmt in node.statement_list:
-            self.visit(stmt)
-        self.visit(node.condition)
-        self.emit(f"JZ {loop_start_label}", "If condition is false, jump back to repeat")
-
     def visit_ForStatement(self, node):
         # Resolve control variable
         control_var_name = node.control_variable.name
@@ -631,12 +623,6 @@ class CodeGenerator:
         # The temporary variable for the end_value (temp_end_val_storage_offset) was allocated
         # on the current function's stack frame. It will be deallocated automatically when
         # the function returns and its stack frame is popped.
-
-    def visit_CaseStatement(self, node):
-        self.emit("# CASE statement not fully implemented", "")
-
-    def visit_CaseElement(self, node):
-        pass
 
     def visit_FieldAccess(self, node):
         self.emit("# FieldAccess not fully implemented", "")
@@ -994,45 +980,6 @@ class CodeGenerator:
                 self.visit(arg) # Pushes integer
                 self.emit("PUSHI 1")
                 self.emit("ADD", f"VM ADD for {func_name_original}")
-                return
-            
-            elif builtin_name == "BUILTIN_ORD":
-                arg = check_args(1, func_name_original)
-                self.visit(arg) # Pushes string address (for char/string[1]) or char (as int)
-                arg_type = self.determine_expression_type(arg)
-                if arg_type == "STRING": # Assuming it's a single char string or we take first char
-                    self.emit("CHRCODE", f"VM CHRCODE for {func_name_original}")
-                elif arg_type == "CHAR": # If CHAR is a distinct type represented as int, it's already ord
-                    pass # Value is already the ordinal
-                elif arg_type == "INTEGER": # If it was already an integer (e.g. ord(65))
-                    pass # Value is already the ordinal
-                else:
-                    raise TypeError(f"Unsupported type {arg_type} for ORD function. Expects CHAR or STRING.")
-                return
-
-            elif builtin_name == "BUILTIN_CHR":
-                arg = check_args(1, func_name_original)
-                self.visit(arg) # Pushes integer
-                # CHR returns a character. VM's WRITECHR prints.
-                # To return a char value (as int/ASCII), it's already on stack.
-                # If it needs to be a string of 1 char, that's more complex.
-                self.emit(f"# {func_name_original}(int) -> char (ASCII value on stack). VM may need specific handling for char type results.", "")
-                return
-
-            elif builtin_name == "BUILTIN_SIN":
-                arg = check_args(1, func_name_original)
-                self.visit(arg)
-                arg_type = self.determine_expression_type(arg)
-                if arg_type == "INTEGER": self.emit("ITOF")
-                self.emit("FSIN", f"VM FSIN for {func_name_original}")
-                return
-
-            elif builtin_name == "BUILTIN_COS":
-                arg = check_args(1, func_name_original)
-                self.visit(arg)
-                arg_type = self.determine_expression_type(arg)
-                if arg_type == "INTEGER": self.emit("ITOF")
-                self.emit("FCOS", f"VM FCOS for {func_name_original}")
                 return
 
         # --- User-defined function/procedure ---
