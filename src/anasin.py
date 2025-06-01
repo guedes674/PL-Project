@@ -110,29 +110,16 @@ def p_type(p):
             | STRING
             | ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type
             | RECORD field_list END'''
-    if len(p) == 2: # simple type, for example: INTEGER, REAL, BOOLEAN, etc.
-        p[0] = p[1] # p[1] is the string token value, e.g., "INTEGER"
-    elif len(p) == 10: # ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type
-        # p[3] is the value of the lower bound NUMBER token (e.g., 1)
-        # p[6] is the value of the upper bound NUMBER token (e.g., 5)
-        # p[9] is the element type (e.g., the string "INTEGER" from a recursive call to p_type)
-        
-        # Create Literal AST nodes for the bounds
-        lower_bound_literal = Literal(p[3]) # Assumes p[3] is the numeric value
-        upper_bound_literal = Literal(p[6]) # Assumes p[6] is the numeric value
-        
-        element_type_val = p[9] # This will be a string like "INTEGER"
-        
-        # Create an ArrayType AST node
-        # This assumes you have an ast_nodes.ArrayType class defined, e.g.:
-        # class ArrayType(Type):
-        #     def __init__(self, index_range, element_type):
-        #         self.index_range = index_range  # tuple of (Literal_lower, Literal_upper)
-        #         self.element_type = element_type # string like "INTEGER"
+    if len(p) == 2: # for simple types like INTEGER, REAL, BOOLEAN, etc.
+        p[0] = p[1]
+    elif len(p) == 10: # for ARRAY type, for example: ARRAY [3..5] OF INTEGER
+        lower_bound_literal = Literal(p[3]) # assuming p[3] is a number literal for lower bound
+        upper_bound_literal = Literal(p[6]) # assuming p[6] is a number literal for upper bound
+
+        element_type_val = p[9]
         p[0] = ArrayType(index_range=(lower_bound_literal, upper_bound_literal), element_type=element_type_val)
-    elif len(p) == 4: # only for RECORD type, for example: RECORD field_list END
-        # Assuming you might want a RecordType AST node here too eventually
-        p[0] = ('record_type', p[2]) # Placeholder, consider creating ast_nodes.RecordType
+    elif len(p) == 4: # for RECORD type, for example: RECORD field_list END
+        p[0] = ('record_type', p[2])
 
 # rule for a field_list
 def p_field_list(p):
@@ -215,9 +202,7 @@ def p_statement(p):
 # rule for assignment statement
 def p_assignment_statement(p):
     '''assignment_statement : ID ASSIGN expression'''
-    # ID is p[1], ASSIGN is p[2]. Let's use line of ID for the Identifier node,
-    # and line of ASSIGN for the AssignmentStatement node.
-    variable_node = Identifier(name=p[1], lineno=p.lineno(1)) # Pass lineno
+    variable_node = Identifier(name=p[1], lineno=p.lineno(1))
     p[0] = AssignmentStatement(variable=variable_node, expression=p[3], lineno=p.lineno(2)) # Pass lineno
 
 # rule for expressions
@@ -283,27 +268,27 @@ def p_factor(p):
     if len(p) == 2:
         # factor : NUMBER | STRING | ID
         if len(p) == 2:
-            if p.slice[1].type == 'NUMBER': # Assuming NUMBER token holds numeric value
-                # You might already have logic to distinguish int/real for p[1]
+            if p.slice[1].type == 'NUMBER': # for NUMBER token
                 p[0] = Literal(p[1])
-            elif p.slice[1].type == 'STRING': # Assuming STRING token holds string value
+            elif p.slice[1].type == 'STRING': # for STRING token
                 p[0] = Literal(p[1])
-            elif p.slice[1].type == 'TRUE':
-                p[0] = Literal(True) # Create Literal AST node with Python's True
-            elif p.slice[1].type == 'FALSE':
-                p[0] = Literal(False) # Create Literal AST node with Python's False
-            elif p.slice[1].type == 'ID':
-                p[0] = Identifier(name=p[1], lineno=p.lineno(1)) # Pass lineno
+            elif p.slice[1].type == 'TRUE': # for TRUE token
+                p[0] = Literal(True)
+            elif p.slice[1].type == 'FALSE': # for FALSE token
+                p[0] = Literal(False)
+            elif p.slice[1].type == 'ID': # for ID token
+                p[0] = Identifier(name=p[1], lineno=p.lineno(1))
     elif p.slice[1].type == 'LPAREN':
-        # factor : LPAREN expression RPAREN
+        # | LPAREN expression RPAREN
         p[0] = p[2]
     elif p.slice[2].type == 'LBRACKET':
-        # factor : factor LBRACKET expression RBRACKET
+        # | factor LBRACKET expression RBRACKET
         p[0] = ArrayAccess(array=p[1], index=p[3])
-    elif len(p) == 5 and p.slice[1].type == 'ID' and p.slice[2].type == 'LPAREN': # factor : ID LPAREN expression_list RPAREN
-         p[0] = FunctionCall(name=p[1], arguments=p[3], lineno=p.lineno(1)) # Pass lineno for FunctionCall
+    elif len(p) == 5 and p.slice[1].type == 'ID' and p.slice[2].type == 'LPAREN':
+        # | ID LPAREN expression_list RPAREN
+         p[0] = FunctionCall(name=p[1], arguments=p[3], lineno=p.lineno(1))
     elif len(p) == 3:
-        # factor : MINUS factor %prec UMINUS
+        # | MINUS factor %prec UMINUS
         p[0] = UnaryOperation(operator=p[1], operand=p[2])
 
 # rule for expression list
