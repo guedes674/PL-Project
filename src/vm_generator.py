@@ -389,7 +389,7 @@ class CodeGenerator:
                         is_var_param=param_group.is_var
                     )
                     self.current_scope.define(param_sym)
-                    self.emit(f"# Param '{param_id_str}' at FP{offset}", "")
+                    self.emit(f"// Param '{param_id_str}' at FP{offset}", "")
 
         if node.block:
             for decl in node.block.declarations:
