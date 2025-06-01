@@ -4117,7 +4117,6 @@ state 163
     (94) if_statement -> IF expression THEN statement . ELSE statement
     (95) if_statement -> IF expression THEN statement .
 
-  ! shift/reduce conflict for ELSE resolved as shift
     ELSE            shift and go to state 179
     END             reduce using rule 95 (if_statement -> IF expression THEN statement .)
     SEMICOLON       reduce using rule 95 (if_statement -> IF expression THEN statement .)
@@ -5076,7 +5075,3 @@ state 208
     RPAREN          reduce using rule 33 (type -> ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type .)
     END             reduce using rule 33 (type -> ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type .)
 
-WARNING: 
-WARNING: Conflicts:
-WARNING: 
-WARNING: shift/reduce conflict for ELSE in state 163 resolved as shift

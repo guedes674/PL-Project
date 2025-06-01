@@ -88,6 +88,7 @@ tokens = [
 ]
 
 precedence = (
+    ('right', 'THEN', 'ELSE'),
     ('left', 'OR', 'ORELSE'),
     ('left', 'AND', 'ANDTHEN'),
     ('nonassoc', 'EQUALS', 'NE', 'LT', 'GT', 'LE', 'GE', 'IN'),

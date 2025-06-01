@@ -260,10 +260,10 @@ def p_factor(p):
               | TRUE
               | FALSE
               | LPAREN expression RPAREN
-              | factor LBRACKET expression RBRACKET  
-              | ID LPAREN expression_list RPAREN  
-              | MINUS factor %prec UMINUS          
-              | NOT factor                         
+              | factor LBRACKET expression RBRACKET
+              | ID LPAREN expression_list RPAREN
+              | MINUS factor %prec UMINUS
+              | NOT factor
               '''
     if len(p) == 2:
         # factor : NUMBER | STRING | ID
