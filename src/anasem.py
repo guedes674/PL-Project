@@ -2,18 +2,18 @@ from ast_nodes import *
 
 class Symbol:
     def __init__(self,
-                 name,
-                 sym_type,
-                 kind,                              # 'variable' | 'constant' | 'function' | 'procedure' | 'parameter'
-                 address_or_offset,                 # For vars: integer offset. For consts: the literal value. For procs/funcs: a label or runtime‐routine name.
-                 scope_level=0,                     # scope level of the symbol (0 for global, 1 for local, etc.)
-                 params_info=None,                  # [Symbol, …] for each parameter (if any)
-                 return_type=None,                  # e.g. 'INTEGER' or 'STRING'
-                 is_var_param=False,                # true if it is a VAR‐parameter slot
-                 is_array=False,                    # true if it is an array
-                 array_lower_bound=None,            # lower bound of the array (if it is an array)
-                 array_element_count=None,          # number of elements in the array (if it is an array)
-                 element_type=None):                # Add element_type parameter
+                name,
+                sym_type,
+                kind,                              # 'variable' | 'constant' | 'function' | 'procedure' | 'parameter'
+                address_or_offset,                 # For vars: integer offset. For consts: the literal value. For procs/funcs: a label or runtime‐routine name.
+                scope_level=0,                     # scope level of the symbol (0 for global, 1 for local, etc.)
+                params_info=None,                  # [Symbol, …] for each parameter (if any)
+                return_type=None,                  # e.g. 'INTEGER' or 'STRING'
+                is_var_param=False,                # true if it is a VAR‐parameter slot
+                is_array=False,                    # true if it is an array
+                array_lower_bound=None,            # lower bound of the array (if it is an array)
+                array_element_count=None,          # number of elements in the array (if it is an array)
+                element_type=None):                # Add element_type parameter
         self.name = name
         self.sym_type = sym_type
         self.kind = kind

@@ -104,12 +104,8 @@ def p_type(p):
             | SHORTINT
             | SINGLE
             | DOUBLE
-            | EXTENDED
-            | COMP
-            | CURRENCY
             | STRING
-            | ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type
-            | RECORD field_list END'''
+            | ARRAY LBRACKET NUMBER DOT DOT NUMBER RBRACKET OF type'''
     if len(p) == 2: # for simple types like INTEGER, REAL, BOOLEAN, etc.
         p[0] = p[1]
     elif len(p) == 10: # for ARRAY type, for example: ARRAY [3..5] OF INTEGER
@@ -118,8 +114,6 @@ def p_type(p):
 
         element_type_val = p[9]
         p[0] = ArrayType(index_range=(lower_bound_literal, upper_bound_literal), element_type=element_type_val)
-    elif len(p) == 4: # for RECORD type, for example: RECORD field_list END
-        p[0] = ('record_type', p[2])
 
 # rule for a field_list
 def p_field_list(p):
@@ -193,8 +187,7 @@ def p_statement(p):
                  | compound_statement
                  | io_statement
                  | if_statement        
-                 | while_statement     
-                 | repeat_statement    
+                 | while_statement  
                  | for_statement       
                  | empty'''
     p[0] = p[1]
@@ -326,12 +319,6 @@ def p_if_statement(p):
 def p_while_statement(p):
     '''while_statement : WHILE expression DO statement'''
     p[0] = WhileStatement(condition=p[2], statement=p[4])
-
-# rule for REPEAT statement
-def p_repeat_statement(p):
-    '''repeat_statement : REPEAT statement_list UNTIL expression'''
-    # p[2] is statement_list, p[4] is expression
-    p[0] = RepeatStatement(statement_list=p[2], condition=p[4])
 
 # rule for FOR statement
 def p_for_statement(p):

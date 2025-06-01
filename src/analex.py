@@ -5,34 +5,25 @@ tokens = [
     'ANDTHEN',
     'ARRAY',
     'BEGIN',
-    'CASE',
     'CONST',
     'DIV',
     'DO',
     'DOWNTO',
     'ELSE',
     'END',
-    'FILE',
     'FOR',
     'FUNCTION',
-    'GOTO',
     'IF',
     'IN',
     'LABEL',
     'MOD',
-    'NIL',
     'OF',
     'OR',
     'ORELSE',
-    'PACKED',
     'PROCEDURE',
     'PROGRAM',
-    'RECORD',
-    'REPEAT',
-    'SET',
     'THEN',
     'TO',
-    'TYPE',
     'UNTIL',
     'VAR',
     'WHILE',
@@ -47,9 +38,6 @@ tokens = [
     'SHORTINT',
     'SINGLE',
     'DOUBLE',
-    'EXTENDED',
-    'COMP',
-    'CURRENCY',
     'ID',
     'NUMBER',
     'STRING',
@@ -61,16 +49,12 @@ tokens = [
     'LPAREN',
     'RPAREN',
     'ASSIGN',
-    'PIPE',
-    'AMPERSAND',
-    'TILDE',
     'NOT',
     'NE',
     'GE',
     'GT',
     'LE',
     'LT',
-    'EQ',
     'LBRACKET',
     'RBRACKET',
     'COMMA',
@@ -78,7 +62,6 @@ tokens = [
     'COLON',
     'DOT',
     'EQUALS',
-    'EXCLAMATION',
     'READ',
     'READLN', 
     'WRITE',
@@ -104,9 +87,6 @@ t_DIVIDE = r'/'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_ASSIGN = r':='
-t_PIPE = r'\|'
-t_AMPERSAND = r'&'
-t_TILDE = r'~'
 t_NE = r'<>'
 t_GE = r'>='
 t_GT = r'>'
@@ -119,7 +99,6 @@ t_SEMICOLON = r';'
 t_COLON = r':'
 t_DOT = r'\.'
 t_EQUALS = r'='
-t_EXCLAMATION = r'!'
 
 # list of reserved words defined in the tokens list
 # and the corresponding regex patterns
@@ -137,10 +116,6 @@ def t_ARRAY(t):
 
 def t_BEGIN(t):
     r'BEGIN'
-    return t
-
-def t_CASE(t):
-    r'CASE'
     return t
 
 def t_CONST(t):
@@ -167,20 +142,12 @@ def t_END(t):
     r'END'
     return t
 
-def t_FILE(t):
-    r'FILE'
-    return t
-
 def t_FOR(t):
     r'FOR'
     return t
 
 def t_FUNCTION(t):
     r'FUNCTION'
-    return t
-
-def t_GOTO(t):
-    r'GOTO'
     return t
 
 def t_IF(t):
@@ -199,10 +166,6 @@ def t_MOD(t):
     r'MOD'
     return t
 
-def t_NIL(t):
-    r'NIL'
-    return t
-
 def t_NOT(t):
     r'NOT'
     return t
@@ -219,10 +182,6 @@ def t_ORELSE(t):
     r'ORELSE'
     return t
 
-def t_PACKED(t):
-    r'PACKED'
-    return t
-
 def t_PROCEDURE(t):
     r'PROCEDURE'
     return t
@@ -231,28 +190,12 @@ def t_PROGRAM(t):
     r'PROGRAM'
     return t
 
-def t_RECORD(t):
-    r'RECORD'
-    return t
-
-def t_REPEAT(t):
-    r'REPEAT'
-    return t
-
-def t_SET(t):
-    r'SET'
-    return t
-
 def t_THEN(t):
     r'THEN'
     return t
 
 def t_TO(t):
     r'TO'
-    return t
-
-def t_TYPE(t):
-    r'TYPE'
     return t
 
 def t_UNTIL(t):
@@ -317,10 +260,6 @@ def t_EXTENDED(t):
 
 def t_COMP(t):
     r'COMP'
-    return t
-
-def t_CURRENCY(t):
-    r'CURRENCY'
     return t
 
 def t_READ(t):

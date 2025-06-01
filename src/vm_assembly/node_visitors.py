@@ -139,16 +139,6 @@ def visit_VariableDeclaration(node):
                 else:
                     ctx.emit(f"PUSHI 0", f"Allocate space for local var '{var_id_str}' at FP+{offset}")
 
-@register_visitor("ConstantDeclaration")
-def visit_ConstantDeclaration(node):
-    for const_def in node.constant_list:
-        raw_value = const_def.value.value
-        # Infer type from raw_value for symbol, or use type from AST if available
-        typ_str = th.type_node_to_string(const_def.value.type if hasattr(const_def.value, 'type') else type(raw_value).__name__)
-        sym = Symbol(const_def.name, typ_str, 'constant', raw_value, ctx.current_scope.scope_level)
-        ctx.current_scope.define(sym)
-        ctx.emit(f"// Constant '{const_def.name}' defined as {raw_value}", "")
-
 @register_visitor("FunctionDeclaration")
 def visit_FunctionDeclaration(node):
     func_label = ctx.new_label(f"func{node.name}")
@@ -369,10 +359,6 @@ def visit_ForStatement(node):
     ctx.emit(f"JUMP {loop_check_label}")
     ctx.emit_label(loop_end_label)
 
-@register_visitor("FieldAccess") # Assuming this is for records/objects, not implemented yet
-def visit_FieldAccess(node):
-    ctx.emit("# FieldAccess not fully implemented", "")
-
 @register_visitor("Literal")
 def visit_Literal(node):
     value = node.value
@@ -426,13 +412,6 @@ def visit_Identifier(node):
                 ctx.emit("PADD", f"Calculate base address of value param array '{var_name}'")
             else: # Scalar value parameter
                 ctx.emit(f"PUSHL {sym.address_or_offset}", f"Push value of param '{var_name}'")
-    elif sym.kind == 'constant':
-        val = sym.address_or_offset # For constants, address_or_offset stores the actual value
-        if isinstance(val, int): ctx.emit(f"PUSHI {val}")
-        elif isinstance(val, float): ctx.emit(f"PUSHF {val}")
-        elif isinstance(val, str): ctx.emit(f'PUSHS "{val.replace("\"", "\\\"")}"') # Basic escaping
-        elif isinstance(val, bool): ctx.emit(f"PUSHI {1 if val else 0}")
-        else: raise TypeError(f"Unsupported constant type for '{var_name}': {type(val)}")
     elif sym.kind == 'function': # Pushing function address (e.g. for passing as param, not direct call)
         ctx.emit(f"PUSHA {sym.address_or_offset}", f"Push address of function '{var_name}'")
     else:
