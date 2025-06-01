@@ -69,6 +69,57 @@ class SymbolTable:
         self.current_param_offset -= 1
         return offset
 
+# helper function that extracts type information from an AST node
+def extract_type_info_from_ast(type_ast_node, line_info_for_error, context_name="Variable"):
+    is_array = isinstance(type_ast_node, ArrayType)
+    symbol_type_str = None
+    element_type_str = None
+
+    if is_array:
+        symbol_type_str = "ARRAY"
+        if not isinstance(type_ast_node.element_type, str):
+            raise Exception(f"{line_info_for_error}{context_name} array element type is not a simple type string.")
+        element_type_str = type_ast_node.element_type
+    else:
+        if not isinstance(type_ast_node, str):
+            raise Exception(f"{line_info_for_error}{context_name} type ('{type(type_ast_node)}') is not a simple type string or recognized array type.")
+        symbol_type_str = type_ast_node
+    
+    return is_array, symbol_type_str, element_type_str
+
+# helper to create a symbol for a function or procedure
+def create_callable_symbol(name_lower, kind_str, defining_symbol_table, return_type_str=None):
+    return Symbol(
+        name=name_lower,
+        sym_type=kind_str,                        # for callables, sym_type can be the same as kind
+        kind=kind_str,
+        address_or_offset='label_' + name_lower,  # standard labeling convention
+        return_type=return_type_str,
+        params_info=[],                           # initialized empty, filled by process_parameters_semantic_check
+        scope_level=defining_symbol_table.scope_level
+    )
+
+# helper to create a symbol for a variable or parameter
+def create_variable_or_param_symbol(name_lower, symbol_data_type_str, kind_str, target_symbol_table, is_array=False, element_type_str=None, is_var_param=False):
+    offset = None
+    if kind_str == 'variable': # variable symbol
+        offset = target_symbol_table.get_local_var_offset()
+    elif kind_str == 'parameter': # parameter symbol
+        offset = target_symbol_table.get_param_offset()
+    else: # unsupported kind for this helper
+        raise ValueError(f"Unsupported kind '{kind_str}' for _create_variable_or_param_symbol")
+
+    return Symbol(
+        name=name_lower,
+        sym_type=symbol_data_type_str,                                     # data type of the variable or parameter
+        kind=kind_str,
+        address_or_offset=offset,                                          # offset for the variable or parameter
+        scope_level=target_symbol_table.scope_level,
+        is_array=is_array,                                                 # true if it is an array
+        element_type=element_type_str,                                     # type of the elements in the array (if it is an array)
+        is_var_param=is_var_param if kind_str == 'parameter' else False    # true if it is a VAR-parameter slot (only for parameters)
+    )
+
 # perform semantic checks on the AST nodes for the given symbol table
 def semantic_check(node, symbol_table):
     if node is None:
@@ -77,8 +128,6 @@ def semantic_check(node, symbol_table):
     if symbol_table.parent is None and not hasattr(symbol_table, "_builtins_registered"):
         register_builtin_functions(symbol_table)
         symbol_table._builtins_registered = True
-
-    current_node_lineno = getattr(node, 'lineno', None)
 
     if isinstance(node, Program): # for program node
         semantic_check(node.header, symbol_table) # check program header
@@ -104,40 +153,19 @@ def semantic_check(node, symbol_table):
             var_decl_specific_lineno = getattr(var_ast_node, 'lineno', var_decl_group_lineno)
             line_info_decl = format_line_info(var_decl_specific_lineno)
 
-            type_info_from_ast = var_ast_node.var_type # type information from the AST node
-
-            is_an_array_decl = isinstance(type_info_from_ast, ArrayType) # check if the variable is an array declaration
-            symbol_type_str = None # initialize symbol type string
-            symbol_element_type_str = None # initialize symbol element type string
-
-            if is_an_array_decl: # if the variable is an array declaration
-                symbol_type_str = "ARRAY" 
-                if not isinstance(type_info_from_ast.element_type, str): # check if the element type is a simple type string
-                    raise Exception(f"{line_info_decl}Array element type is not a simple type string.")
-                symbol_element_type_str = type_info_from_ast.element_type # convert element type to string
-            else: # if the variable is not an array declaration
-                if not isinstance(type_info_from_ast, str): # if var_type is not a string
-                    raise Exception(f"{line_info_decl}Variable type is not a simple type string or recognized array type.")
-                symbol_type_str = type_info_from_ast # convert type to string
+            is_an_array_decl, symbol_type_str, symbol_element_type_str = extract_type_info_from_ast(var_ast_node.var_type, line_info_decl, "Variable")
 
             for var_name_original in var_ast_node.id_list: # check each identifier in the variable declaration
                 var_name_lower = var_name_original.lower()
                 if symbol_table.resolve(var_name_lower): # if the variable already exists
                     raise Exception(f"{line_info_decl}Variable '{var_name_original}' already declared.")
                 
-                offset = symbol_table.get_local_var_offset()
-                symbol = Symbol(
-                    name=var_name_lower,
-                    sym_type=symbol_type_str,
-                    kind='variable',
-                    address_or_offset=offset,
-                    is_array=is_an_array_decl,
-                    element_type=symbol_element_type_str,
-                    scope_level=symbol_table.scope_level
-                )
-                symbol_table.define(symbol) # define the variable in the symbol table
+                symbol = create_variable_or_param_symbol(var_name_lower, symbol_type_str, 'variable', symbol_table, is_an_array_decl, symbol_element_type_str)
+                symbol_table.define(symbol)
 
     elif isinstance(node, AssignmentStatement): # for assignment statement node
+        semantic_check(node.variable, symbol_table) # check the variable on the left-hand side
+
         var_name_original = node.variable.name
         var_name_lower = var_name_original.lower()
         var_symbol = symbol_table.resolve(var_name_lower)
@@ -147,10 +175,6 @@ def semantic_check(node, symbol_table):
 
         line_info_assign = format_line_info(assign_stmt_lineno)
         line_info_var_lhs = format_line_info(var_ident_lineno)
-
-        # if the variable is not found in the symbol table
-        if not var_symbol:
-            raise Exception(f"{line_info_var_lhs}LHS variable '{var_name_original}' not declared.")
 
         declared_lhs_type = None # initialize the declared type of the LHS variable
         if var_symbol.kind == 'variable': # if the variable is a regular variable
@@ -234,26 +258,12 @@ def semantic_check(node, symbol_table):
         if symbol_table.resolve(func_name_lower): # if the function is already declared
             raise Exception(f"{line_info_decl}Identifier '{func_name_original}' already declared.")
 
-        func_symbol = Symbol(
-            name=func_name_lower,
-            sym_type='function',
-            kind='function',
-            address_or_offset='label_' + func_name_lower,
-            return_type=node.return_type,
-            params_info=[],
-            scope_level=symbol_table.scope_level
-        )
+        func_symbol = create_callable_symbol(func_name_lower, 'function', symbol_table, node.return_type) # create a symbol for the function with its return type
         symbol_table.define(func_symbol) # define the function in the symbol table
 
         local_table = SymbolTable(parent=symbol_table, scope_name=func_name_lower) # create a new local symbol table for the function
 
-        implicit_return_var = Symbol( # define an implicit return variable for the function
-            name=func_name_lower,
-            sym_type=node.return_type,
-            kind='variable',
-            address_or_offset=local_table.get_local_var_offset(),
-            scope_level=local_table.scope_level
-        )
+        implicit_return_var = create_variable_or_param_symbol(func_name_lower, node.return_type, 'variable',local_table)
         local_table.define(implicit_return_var)
 
         process_parameters_semantic_check(node.parameter_list, local_table, func_symbol, func_name_original, "function") # process parameters for the function
@@ -270,14 +280,7 @@ def semantic_check(node, symbol_table):
         if symbol_table.resolve(proc_name_lower): # if the procedure is already declared
             raise Exception(f"{line_info_decl}Identifier '{proc_name_original}' already declared.")
 
-        proc_symbol = Symbol(
-            name=proc_name_lower,
-            sym_type='procedure',
-            kind='procedure',
-            address_or_offset='label_' + proc_name_lower,
-            params_info=[],
-            scope_level=symbol_table.scope_level
-        )
+        proc_symbol = create_callable_symbol(proc_name_lower, 'procedure', symbol_table) # same as function but without return type
         symbol_table.define(proc_symbol) # define the procedure in the symbol table
 
         local_table = SymbolTable(parent=symbol_table, scope_name=proc_name_lower) # create a new local symbol table for the procedure
@@ -457,15 +460,10 @@ def process_parameters_semantic_check(parameter_list_ast, local_table, callable_
 
             if local_table.resolve(param_name_lower): # parameter already defined in this scope
                 raise Exception(f"{line_info_param}Parameter '{param_name_original}' redefined in {callable_kind_str} '{callable_name_original}'.")
-            
-            param_sym = Symbol(
-                name=param_name_lower,
-                sym_type=param_ast_node.param_type,
-                kind='parameter',
-                address_or_offset=local_table.get_param_offset(),
-                is_var_param=param_ast_node.is_var,
-                scope_level=local_table.scope_level
-            )
+
+            is_array_param, param_symbol_type_str, param_element_type_str = extract_type_info_from_ast(param_ast_node.param_type, line_info_param, "Parameter")
+
+            param_sym = create_variable_or_param_symbol( param_name_lower, param_symbol_type_str, 'parameter', local_table, is_array_param, param_element_type_str, param_ast_node.is_var)
             local_table.define(param_sym) # define the parameter in the local symbol table
             callable_symbol.params_info.append(param_sym) # append the parameter symbol to the callable's params_info
 
