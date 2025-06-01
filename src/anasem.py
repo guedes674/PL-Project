@@ -91,7 +91,7 @@ def semantic_check(node, symbol_table):
 
     elif isinstance(node, ProgramHeader): # for program header node
         prog_header_lineno = getattr(node, 'lineno', None)
-        line_info_header = _format_line_info(prog_header_lineno)
+        line_info_header = format_line_info(prog_header_lineno)
         for ident_original in node.id_list: # check each identifier in the program header
             ident_lower = ident_original.lower()
             if symbol_table.resolve(ident_lower): # identifier already exists
@@ -102,7 +102,7 @@ def semantic_check(node, symbol_table):
         var_decl_group_lineno = getattr(node, 'lineno', None)
         for var_ast_node in node.variable_list: # check each variable in the declaration
             var_decl_specific_lineno = getattr(var_ast_node, 'lineno', var_decl_group_lineno)
-            line_info_decl = _format_line_info(var_decl_specific_lineno)
+            line_info_decl = format_line_info(var_decl_specific_lineno)
 
             type_info_from_ast = var_ast_node.var_type # type information from the AST node
 
@@ -145,8 +145,8 @@ def semantic_check(node, symbol_table):
         assign_stmt_lineno = getattr(node, 'lineno', None)
         var_ident_lineno = getattr(node.variable, 'lineno', assign_stmt_lineno)
 
-        line_info_assign = _format_line_info(assign_stmt_lineno)
-        line_info_var_lhs = _format_line_info(var_ident_lineno)
+        line_info_assign = format_line_info(assign_stmt_lineno)
+        line_info_var_lhs = format_line_info(var_ident_lineno)
 
         # if the variable is not found in the symbol table
         if not var_symbol:
@@ -213,7 +213,7 @@ def semantic_check(node, symbol_table):
         symbol = symbol_table.resolve(func_name_lower)
         
         call_lineno = getattr(node, 'lineno', None)
-        line_info_call = _format_line_info(call_lineno)
+        line_info_call = format_line_info(call_lineno)
 
         if not symbol: # if the function or procedure is not found in the symbol table
             raise Exception(f"{line_info_call}Function or Procedure '{func_name_original}' not declared.")
@@ -229,7 +229,7 @@ def semantic_check(node, symbol_table):
         func_name_lower = func_name_original.lower()
         
         decl_lineno = getattr(node, 'lineno', None)
-        line_info_decl = _format_line_info(decl_lineno)
+        line_info_decl = format_line_info(decl_lineno)
 
         if symbol_table.resolve(func_name_lower): # if the function is already declared
             raise Exception(f"{line_info_decl}Identifier '{func_name_original}' already declared.")
@@ -256,7 +256,7 @@ def semantic_check(node, symbol_table):
         )
         local_table.define(implicit_return_var)
 
-        _process_parameters_semantic_check(node.parameter_list, local_table, func_symbol, func_name_original, "function") # process parameters for the function
+        process_parameters_semantic_check(node.parameter_list, local_table, func_symbol, func_name_original, "function") # process parameters for the function
         
         semantic_check(node.block, local_table) # check the block of the function
 
@@ -265,7 +265,7 @@ def semantic_check(node, symbol_table):
         proc_name_lower = proc_name_original.lower()
 
         decl_lineno = getattr(node, 'lineno', None)
-        line_info_decl = _format_line_info(decl_lineno)
+        line_info_decl = format_line_info(decl_lineno)
 
         if symbol_table.resolve(proc_name_lower): # if the procedure is already declared
             raise Exception(f"{line_info_decl}Identifier '{proc_name_original}' already declared.")
@@ -282,7 +282,7 @@ def semantic_check(node, symbol_table):
 
         local_table = SymbolTable(parent=symbol_table, scope_name=proc_name_lower) # create a new local symbol table for the procedure
 
-        _process_parameters_semantic_check(node.parameter_list, local_table, proc_symbol, proc_name_original, "procedure") # process parameters for the procedure
+        process_parameters_semantic_check(node.parameter_list, local_table, proc_symbol, proc_name_original, "procedure") # process parameters for the procedure
 
         semantic_check(node.block, local_table) # check the block of the procedure
 
@@ -313,7 +313,7 @@ def semantic_check(node, symbol_table):
 
     else: # if the node is of an unknown type
         unknown_node_lineno = getattr(node, 'lineno', None) # get the line number of the unknown node
-        line_info_unknown = _format_line_info(unknown_node_lineno) # format line info for the unknown node
+        line_info_unknown = format_line_info(unknown_node_lineno) # format line info for the unknown node
         raise Exception(f"{line_info_unknown}Unknown AST node type for semantic check: {type(node)}")
 
 # check if an identifier exists in the symbol table
@@ -323,13 +323,13 @@ def check_identifier_exists(identifier_node, symbol_table):
     identifier_name_lower = identifier_name_original.lower()
     if not symbol_table.resolve(identifier_name_lower): # if the identifier is not found in the symbol table
         ident_lineno = getattr(identifier_node, 'lineno', None) # get the line number of the identifier node
-        line_info = _format_line_info(ident_lineno) # format line info for the identifier
+        line_info = format_line_info(ident_lineno) # format line info for the identifier
         raise Exception(f"{line_info}Identifier '{identifier_name_original}' not declared in this scope.")
 
 # get the type of an expression node based on the symbol table
 def get_expression_type(node, symbol_table):
     node_lineno = getattr(node, 'lineno', None)
-    line_info = _format_line_info(node_lineno)
+    line_info = format_line_info(node_lineno)
 
     if isinstance(node, Identifier): # if the node is an identifier
         symbol = symbol_table.resolve(node.name.lower())
@@ -446,14 +446,14 @@ def get_expression_type(node, symbol_table):
         raise Exception(f"{line_info}Cannot determine type for expression node: {type(node)}.")
 
 # helper function to process parameters for functions and procedures
-def _process_parameters_semantic_check(parameter_list_ast, local_table, callable_symbol, callable_name_original, callable_kind_str):
+def process_parameters_semantic_check(parameter_list_ast, local_table, callable_symbol, callable_name_original, callable_kind_str):
     for param_ast_node in parameter_list_ast: # param_ast_node is a ParameterDeclaration node
         param_decl_lineno = getattr(param_ast_node, 'lineno', None)
 
         for param_name_original in param_ast_node.id_list: # param_name_original is the original name of the parameter
             param_name_lower = param_name_original.lower()
             
-            line_info_param = _format_line_info(param_decl_lineno)
+            line_info_param = format_line_info(param_decl_lineno)
 
             if local_table.resolve(param_name_lower): # parameter already defined in this scope
                 raise Exception(f"{line_info_param}Parameter '{param_name_original}' redefined in {callable_kind_str} '{callable_name_original}'.")
@@ -470,7 +470,7 @@ def _process_parameters_semantic_check(parameter_list_ast, local_table, callable
             callable_symbol.params_info.append(param_sym) # append the parameter symbol to the callable's params_info
 
 # Helper to format line information for error messages
-def _format_line_info(lineno):
+def format_line_info(lineno):
     return f"Line {lineno}: " if lineno is not None else ""
 
 # register built-in functions and procedures in the global symbol table
