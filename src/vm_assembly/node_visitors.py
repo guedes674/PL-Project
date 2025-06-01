@@ -49,14 +49,14 @@ def visit_Program(node):
                     for var_id_str in var_info.id_list:
                         offset = ctx.current_scope.get_local_var_offset(count=array_size)
                         sym = Symbol(var_id_str,
-                                     var_type_for_symbol_str,
-                                     'variable',
-                                     offset,
-                                     scope_level=0,
-                                     is_array=is_array_type,
-                                     array_lower_bound=lower_bound if is_array_type else None,
-                                     array_element_count=array_size if is_array_type else None,
-                                     element_type=actual_element_type_str if is_array_type else None)
+                                    var_type_for_symbol_str,
+                                    'variable',
+                                    offset,
+                                    scope_level=0,
+                                    is_array=is_array_type,
+                                    array_lower_bound=lower_bound if is_array_type else None,
+                                    array_element_count=array_size if is_array_type else None,
+                                    element_type=actual_element_type_str if is_array_type else None)
                         ctx.current_scope.define(sym)
                         ctx.globals_handled_pre_start.add(var_id_str)
                         if is_array_type:
@@ -107,14 +107,14 @@ def visit_VariableDeclaration(node):
                 sym_check = ctx.current_scope.resolve(var_id_str)
                 if not sym_check: # Define only if not somehow already defined (e.g. forward decl)
                     sym = Symbol(var_id_str,
-                                 var_type_for_symbol_str,
-                                 'variable',
-                                 offset,
-                                 scope_level=0,
-                                 is_array=is_array_type,
-                                 array_lower_bound=lower_bound if is_array_type else None,
-                                 array_element_count=array_size if is_array_type else None,
-                                 element_type=actual_element_type_str if is_array_type else None)
+                                var_type_for_symbol_str,
+                                'variable',
+                                offset,
+                                scope_level=0,
+                                is_array=is_array_type,
+                                array_lower_bound=lower_bound if is_array_type else None,
+                                array_element_count=array_size if is_array_type else None,
+                                element_type=actual_element_type_str if is_array_type else None)
                     ctx.current_scope.define(sym)
                 if is_array_type:
                     ctx.emit(f"// Global array '{var_id_str}' (gp[{offset}..]) defined (post-START init)", "")
@@ -125,14 +125,14 @@ def visit_VariableDeclaration(node):
             else: # Local variable
                 offset = ctx.current_scope.get_local_var_offset(count=array_size)
                 sym = Symbol(var_id_str,
-                             var_type_for_symbol_str,
-                             'variable',
-                             offset,
-                             scope_level=ctx.current_scope.scope_level, # Use dynamic scope level
-                             is_array=is_array_type,
-                             array_lower_bound=lower_bound if is_array_type else None,
-                             array_element_count=array_size if is_array_type else None,
-                             element_type=actual_element_type_str if is_array_type else None)
+                            var_type_for_symbol_str,
+                            'variable',
+                            offset,
+                            scope_level=ctx.current_scope.scope_level, # Use dynamic scope level
+                            is_array=is_array_type,
+                            array_lower_bound=lower_bound if is_array_type else None,
+                            array_element_count=array_size if is_array_type else None,
+                            element_type=actual_element_type_str if is_array_type else None)
                 ctx.current_scope.define(sym)
                 if is_array_type:
                     ctx.emit(f"PUSHN {array_size}", f"Allocate {array_size} slots for local array '{var_id_str}' at FP+{offset}")
@@ -162,7 +162,7 @@ def visit_FunctionDeclaration(node):
                     Symbol(pid, param_type_str, 'parameter', 0, is_var_param=param_group.is_var)
                 )
     func_sym = Symbol(node.name, return_type_str, 'function', func_label,
-                      params_info=param_symbols_for_signature, return_type=return_type_str)
+                        params_info=param_symbols_for_signature, return_type=return_type_str)
     ctx.current_scope.define(func_sym)
     ctx.emit_label(func_label)
     ctx.push_scope(scope_name=f"func_{node.name}")
@@ -172,7 +172,7 @@ def visit_FunctionDeclaration(node):
             for param_id_str in reversed(param_group.id_list):
                 offset = ctx.current_scope.get_param_offset()
                 param_sym = Symbol(param_id_str, param_type_str, 'parameter', offset,
-                                   scope_level=ctx.current_scope.scope_level, is_var_param=param_group.is_var)
+                                    scope_level=ctx.current_scope.scope_level, is_var_param=param_group.is_var)
                 ctx.current_scope.define(param_sym)
                 ctx.emit(f"// Param '{param_id_str}' at FP{offset}", "")
     # Allocate space for local variables by visiting their declarations
@@ -210,7 +210,7 @@ def visit_ProcedureDeclaration(node):
             for param_id_str in reversed(param_group.id_list):
                 offset = ctx.current_scope.get_param_offset()
                 param_sym = Symbol(param_id_str, param_type_str, 'parameter', offset,
-                                   scope_level=ctx.current_scope.scope_level, is_var_param=param_group.is_var)
+                                    scope_level=ctx.current_scope.scope_level, is_var_param=param_group.is_var)
                 ctx.current_scope.define(param_sym)
                 ctx.emit(f"// Param '{param_id_str}' at FP{offset}", "")
     if node.block and node.block.declarations:
@@ -242,7 +242,7 @@ def visit_AssignmentStatement(node):
         array_name = array_node_for_addr.name
         sym_array = ctx.current_scope.resolve(array_name)
         if not sym_array or not sym_array.is_array:
-             # Check if it's a VAR parameter that's an array
+            # Check if it's a VAR parameter that's an array
             if sym_array and sym_array.is_var_param: # It's an address
                 ctx.emit(f"PUSHL {sym_array.address_or_offset}", f"Load address from VAR param array '{array_name}'")
             else:
@@ -394,6 +394,7 @@ def visit_Identifier(node):
     sym = ctx.current_scope.resolve(var_name)
     if not sym:
         raise ValueError(f"Undefined identifier '{var_name}' used as a value.")
+
     if sym.kind == 'variable':
         if sym.is_array: # Pushing base address of an array
             if sym.scope_level == 0:
@@ -410,13 +411,16 @@ def visit_Identifier(node):
             else:
                 ctx.emit(f"PUSHL {sym.address_or_offset}", f"Push local '{var_name}'")
     elif sym.kind == 'parameter':
-        if sym.is_var_param: # VAR param holds an address
+        if sym.is_var_param:
+            # For VAR parameters, we push their address first.
             ctx.emit(f"PUSHL {sym.address_or_offset}", f"Push address from VAR param '{var_name}'")
-            # If this address is for an array and used in ArrayAccess, this is correct.
-            # If it's a scalar VAR param and its value is needed, an explicit DEREF/LOAD 0 would be after this.
-            # The ArrayAccess visitor will handle LOADN using this address.
+            # If it's a scalar VAR parameter (not an array whose base address is needed by ArrayAccess),
+            # its value is typically needed when it appears in an expression. So, dereference it.
+            if not sym.is_array:
+                ctx.emit(f"LOAD 0", f"Dereference scalar VAR param '{var_name}' to get its value")
         else: # Value parameter
             if sym.is_array: # Value parameter that is an array (copied)
+                # Push the base address of the copied array on the stack frame
                 ctx.emit("PUSHFP", f"Push FP for value param array '{var_name}' base address")
                 ctx.emit(f"PUSHI {sym.address_or_offset}", f"Offset of value param array '{var_name}'")
                 ctx.emit("PADD", f"Calculate base address of value param array '{var_name}'")
@@ -451,8 +455,8 @@ def visit_ArrayAccess(node):
             ctx.emit(f"PUSHG {string_sym.address_or_offset}", f"Push global string '{var_name}'")
         else: # Local or param
             if string_sym.is_var_param: # VAR param string
-                 ctx.emit(f"PUSHL {string_sym.address_or_offset}", f"Load address from VAR param string '{var_name}'")
-                 ctx.emit("LOAD 0", f"Dereference VAR param to get string address for '{var_name}'")
+                ctx.emit(f"PUSHL {string_sym.address_or_offset}", f"Load address from VAR param string '{var_name}'")
+                ctx.emit("LOAD 0", f"Dereference VAR param to get string address for '{var_name}'")
             else: # Regular local string
                 ctx.emit(f"PUSHL {string_sym.address_or_offset}", f"Push local string '{var_name}'")
         visit(node.index)
@@ -512,7 +516,7 @@ def visit_UnaryOperation(node):
 def visit_BinaryOperation(node):
     # Special handling for string char comparison: char_var = 'a'
     if node.operator == '=' and isinstance(node.right, ast_nodes.Literal) and \
-       isinstance(node.right.value, str) and len(node.right.value) == 1:
+        isinstance(node.right.value, str) and len(node.right.value) == 1:
         if isinstance(node.left, ast_nodes.ArrayAccess) and isinstance(node.left.array, ast_nodes.Identifier):
             left_array_sym = ctx.current_scope.resolve(node.left.array.name)
             if left_array_sym and left_array_sym.sym_type and left_array_sym.sym_type.upper() == 'STRING':
@@ -560,7 +564,7 @@ def visit_BinaryOperation(node):
     # Relational operators also need type-aware versions
     is_float_comparison = False
     if op in ['<', '<=', '>', '>=', '=', '<>']:
-         if left_expr_type == 'REAL' or right_expr_type == 'REAL':
+        if left_expr_type == 'REAL' or right_expr_type == 'REAL':
             is_float_comparison = True
             # Similar ITOF logic as above if types are mixed
             if left_expr_type == 'INTEGER' and right_expr_type == 'REAL':
@@ -678,18 +682,11 @@ def visit_FunctionCall(node):
             visit(arg_node) # Pushes integer or char (ASCII)
             ctx.emit("PUSHI 1"); ctx.emit("ADD")
             return
-        # ... other builtins
         else:
             ctx.emit(f"// Builtin {builtin_name} call not fully implemented in generator", "")
-            # Fallback: push args, then PUSHA for builtin if it's a label, then CALL
-            # This part needs to be robust based on how builtins are actually handled by VM
             if node.arguments:
                 for arg_expr in node.arguments: visit(arg_expr)
-            # If builtin_name is a label the VM knows:
-            # ctx.emit(f"PUSHA {builtin_name_label_for_vm}") 
-            # ctx.emit("CALL")
             return
-
 
     # User-defined function/procedure
     num_expected_params = len(func_sym.params_info)
@@ -720,11 +717,6 @@ def visit_FunctionCall(node):
                 visit(arg_expr)
     ctx.emit(f"PUSHA {func_sym.address_or_offset}", f"Push address of {func_name_original}")
     ctx.emit("CALL")
-    # If it's a function and its result is used, it's on TOS.
-    # If it's a procedure, or a function whose result is not used (e.g. called as a statement),
-    # and the VM *always* leaves a return value for functions, we might need to POP it here
-    # if func_sym.return_type != "VOID" and this FunctionCall is a statement.
-    # This depends on the parent node of FunctionCall. For now, assume this is handled or not an issue.
 
 
 @register_visitor("IOCall") # Handles read, readln, write, writeln if they are distinct AST nodes
@@ -788,7 +780,7 @@ def visit_IOCall(node):
                     raise ValueError(f"'{array_name}' not a defined array/VAR param for {op}.")
 
                 if sym_array.is_var_param: # VAR param that is an array
-                     ctx.emit(f"PUSHL {sym_array.address_or_offset}", f"Load address from VAR param array '{array_name}'")
+                    ctx.emit(f"PUSHL {sym_array.address_or_offset}", f"Load address from VAR param array '{array_name}'")
                 elif sym_array.scope_level == 0:
                     ctx.emit("PUSHGP"); ctx.emit(f"PUSHI {sym_array.address_or_offset}"); ctx.emit("PADD")
                 else:

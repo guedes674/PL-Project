@@ -13,7 +13,7 @@ def process_array_type(var_type_node):
         end_node = var_type_node.index_range[1]
 
         if isinstance(start_node, ast_nodes.Literal) and isinstance(start_node.value, int) and \
-           isinstance(end_node, ast_nodes.Literal) and isinstance(end_node.value, int):
+            isinstance(end_node, ast_nodes.Literal) and isinstance(end_node.value, int):
 
             low = start_node.value
             high = end_node.value

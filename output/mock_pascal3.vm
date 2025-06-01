@@ -24,7 +24,9 @@ forcheck2:
     INFEQ // Check j <= end_value
     JZ forend3 // If not (j <= end_value), exit loop
     PUSHL -1 // Push address from VAR param 'S'
+    LOAD 0 // Dereference scalar VAR param 'S' to get its value
     PUSHL -3 // Push address from VAR param 'A'
+    LOAD 0 // Dereference scalar VAR param 'A' to get its value
     PUSHL 0 // Push local 'j'
     LOADN // Load value from array element
     ADD

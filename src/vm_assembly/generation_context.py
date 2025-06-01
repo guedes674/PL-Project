@@ -55,10 +55,10 @@ def pop_scope():
         # This logic might need adjustment based on how SymbolTable parentage is set up
         # For now, assume direct parent access is fine.
         if current_scope.parent.scope_name == "global_init_phase": # Special name for the pre-global scope
-             # If the parent is the 'global_init_phase', it means the current scope is 'global'.
-             # Popping 'global' should ideally not happen or be handled carefully.
-             # For simplicity, we allow popping back to 'global_init_phase' if it's the direct parent.
-             # The main generator logic should prevent popping beyond the true 'global' scope during execution.
+            # If the parent is the 'global_init_phase', it means the current scope is 'global'.
+            # Popping 'global' should ideally not happen or be handled carefully.
+            # For simplicity, we allow popping back to 'global_init_phase' if it's the direct parent.
+            # The main generator logic should prevent popping beyond the true 'global' scope during execution.
             current_scope = current_scope.parent
         elif current_scope.parent is not None: # General case
             current_scope = current_scope.parent
