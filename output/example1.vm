@@ -1,5 +1,10 @@
+    PUSHI 0 // Initial stack value for global 'sum' (gp[0])
     START // Initialize Frame Pointer = Stack Pointer
     PUSHS "Ola, Mundo!"
     WRITES
     WRITELN
+    PUSHI 2
+    PUSHI 3
+    ADD
+    STOREG 0 // Store to global variable 'sum'
     STOP // End of program

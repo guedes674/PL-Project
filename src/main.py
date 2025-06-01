@@ -59,7 +59,6 @@ def compile_pascal_file(file_path):
         return
 
     print("AST generated successfully.")
-    print(ast)
     print("Performing semantic analysis...")
 
     try:
