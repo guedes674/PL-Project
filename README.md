@@ -1,4 +1,4 @@
-<img src='media/uminho_eng.png' width="30%"/>
+<img src='uminho_eng.png' width="30%"/>
 
 <h3 align="center">Licenciatura em Engenharia Informática <br> Trabalho prático de Processamento de Linguagens <br> 2024/2025 </h3>
 
