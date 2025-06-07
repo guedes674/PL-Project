@@ -1,25 +1,22 @@
-# PL-Project
-Pratical Project for the Language Processing class
+<img src='media/uminho_eng.png' width="30%"/>
 
-## Autores
+<h3 align="center">Licenciatura em Engenharia Informática <br> Trabalho prático de Processamento de Linguagens <br> 2024/2025 </h3>
 
-<div style="display: flex; justify-content: space-between; margin: 20px 0;">
-  <div style="text-align: center; width: 30%;">
-    <p><strong>Tiago Carneiro</strong><br>A93207</p>
-    <img src="media/a93207.jpg" alt="Tiago Carneiro" width="200">
-  </div>
-  
-  <div style="text-align: center; width: 30%;">
-    <p><strong>Tiago Guedes</strong><br>A97369</p>
-    <img src="https://github.com/user-attachments/assets/c90bfde7-55cc-41ed-927c-8bc988d84250" alt="Tiago Guedes" width="250">
-  </div>
-  
-  <div style="text-align: center; width: 30%;">
-    <p><strong>Diogo Gonçalves</strong><br>A101919</p>
-    <img src="media/diogo.jpg" alt="Diogo Gonçalves" width="180">
-  </div>
+---
+<h3 align="center"> Colaboradores &#129309 </h2>
+
+<div align="center">
+
+| Nome             | Número  |
+|------------------|---------|
+| Tiago Carneiro   | A93207  |
+| Tiago Guedes     | A97369  |
+| Diogo Gonçalves  | A101919 |
+
+Nota : 20
+
 </div>
-
+# RC2425-Grupo-89
 
 Construir um analizador léxico para a linguagem Pascal
 
