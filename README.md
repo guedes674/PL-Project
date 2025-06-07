@@ -13,10 +13,10 @@
 | Tiago Guedes     | A97369  |
 | Diogo Gonçalves  | A101919 |
 
-Nota : 20
+Nota : 20 ⭐
 
 </div>
-# RC2425-Grupo-89
+# PL, UMINHO
 
 Construir um analizador léxico para a linguagem Pascal
 
