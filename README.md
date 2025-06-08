@@ -18,7 +18,7 @@ Nota : 20 ⭐
 </div>
 # PL, UMINHO
 
-Construir um analizador léxico para a linguagem Pascal
+Construir um compilador para Pascal Standard
 
 ## Lista de Resultados
 
