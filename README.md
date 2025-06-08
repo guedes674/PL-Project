@@ -18,8 +18,6 @@ Nota : 20 ⭐
 </div>
 # PL, UMINHO
 
-Construir um compilador para Pascal Standard
-
 ## Lista de Resultados
 
 ### Source Code (src/)
